@@ -1,6 +1,7 @@
 package christensenjohnsrud.funfit;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -18,9 +19,11 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
-public class Interval extends AppCompatActivity implements SensorEventListener, View.OnClickListener{
+public class IntervalLinear extends AppCompatActivity implements SensorEventListener, View.OnClickListener{
 
     private String className = "Interval.java"; //To debug
+
+
     //BUGGING
     private Button plus, minus;
     private EditText accel_tv;
@@ -40,6 +43,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     private TextView timerValue;
     private long startTime = 0L;
     private Handler handler = new Handler();
+
 
     // CONNECT TIMER AND ACCELERATION
     private boolean timerOn = false;
@@ -62,7 +66,6 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_interval);
 
-        // FIND THRESHOLD HELPERS
         plus = (Button) findViewById(R.id.button_plus2);
         minus = (Button) findViewById(R.id.button_minus2);
         accel_tv = (EditText) findViewById(R.id.textView_speed_threshold2);
@@ -71,8 +74,8 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         minus.setOnClickListener(this);
 
         //  ACCELEROMETER
-        sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
-        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
 
         // TIMER
@@ -129,18 +132,10 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        // http://developer.android.com/guide/topics/sensors/sensors_motion.html
-        final float alpha = 0.8f;
 
-        // Isolate the force of gravity with the low-pass filter.
-        gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
-        gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
-        gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
-
-        // Remove the gravity contribution with the high-pass filter.
-        float axisX = Math.abs(event.values[0] - gravity[0]);
-        float axisY = Math.abs(event.values[1] - gravity[1]);
-        float axisZ = Math.abs(event.values[2] - gravity[2]);
+        float axisX = Math.abs(event.values[0]);
+        float axisY = Math.abs(event.values[1]);
+        float axisZ = Math.abs(event.values[2]);
 
         if (axisX > maxX) maxX = axisX;
         if (axisY > maxY) maxY = axisY;
@@ -149,10 +144,8 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         if (startTimerCountDown > 0){
             startTimerCountDown--;
         }
-
         else{
-            startThreshold = accel_threshold;
-            if ((axisX >= startThreshold || axisY >= startThreshold || axisZ >= startThreshold) && !blocked){
+            if ((axisX >= accel_threshold || axisY >= accel_threshold || axisZ >= accel_threshold) && !blocked){
                 Log.i(className, "*accelerometer* x=" + Math.round(axisX) + " y=" + Math.round(axisY) + " z=" + Math.round(axisZ));
 
                 if (timerOn){
@@ -205,7 +198,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
             public void run() {
                 blocked = false;
             }
-        }, 3000);
+        }, 2000); // Milliseconds before it will check whether the user's acceleration is more than the threshold
     }
 
     @Override
@@ -219,7 +212,4 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
             accel_tv.setText(accel_threshold + "");
         }
     }
-
-
-
 }

@@ -22,6 +22,8 @@
             android:label="@string/title_activity_interval"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity android:name=".LongDistance" />
+        <activity android:name=".IntervalLinear" />
+
         <activity android:name=".HeightMeasurement"></activity>
     </application>
 
