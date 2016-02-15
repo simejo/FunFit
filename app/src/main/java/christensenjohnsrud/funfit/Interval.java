@@ -1,5 +1,6 @@
 package christensenjohnsrud.funfit;
 
+import android.app.Activity;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -40,10 +41,11 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     private TextView timerValue;
     private long startTime = 0L;
     private Handler handler = new Handler();
+    private Timer timer;
 
     // CONNECT TIMER AND ACCELERATION
     private boolean timerOn = false;
-    private boolean blocked = false; // Block activation/deactivation of timer for a given time
+    private boolean blocked = false; // Activation/deactivation of timer for a given time
     private int startTimerCountDown= 15;
     private ListView resultsList;
 
@@ -77,6 +79,8 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
 
         // TIMER
         timerValue = (TextView) findViewById(R.id.timer_value);
+        timer = new Timer(Interval.this, R.id.timer_value);
+
 
         // RESULTS
         currentResults = new ArrayList<IntervalItem>();
@@ -92,40 +96,19 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
             public void onClick(View view) {
                 startTime = SystemClock.uptimeMillis();
                 Log.i(className, "starttime " + startTime);
-                handler.removeCallbacks(updateTimeTask);
-                handler.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
+                //handler.removeCallbacks(updateTimeTask);
+                //handler.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
             }
         });
 
         pauseButton = (Button) findViewById(R.id.pause_button);
         pauseButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
-                handler.removeCallbacks(updateTimeTask);
+                //handler.removeCallbacks(updateTimeTask);
 
             }
         });
     }
-
-    // Timer
-    private Runnable updateTimeTask = new Runnable() {
-        public void run() {
-            final long start = startTime;
-            long millis = SystemClock.uptimeMillis() - start;
-            int seconds = (int) (millis / 1000);
-            int minutes = seconds / 60;
-            seconds     = seconds % 60;
-
-            //TODO: ADD TIDELER
-            if (seconds < 10) {
-                timerValue.setText("" + minutes + ":0" + seconds);
-            } else {
-                timerValue.setText("" + minutes + ":" + seconds);
-            }
-            handler.postAtTime(this,
-                    start + (((minutes * 60) + seconds + 1) * 1000));
-        }
-    };
-
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -154,7 +137,6 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
             startThreshold = accel_threshold;
             if ((axisX >= startThreshold || axisY >= startThreshold || axisZ >= startThreshold) && !blocked){
                 Log.i(className, "*accelerometer* x=" + Math.round(axisX) + " y=" + Math.round(axisY) + " z=" + Math.round(axisZ));
-
                 if (timerOn){
                     String currentIntervalDuration = timerValue.getText().toString();
                     currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration, maxX, maxY, maxZ));
@@ -162,10 +144,13 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
                     maxY = 0;
                     maxZ = 0;
 
-                    startTime = SystemClock.uptimeMillis();
+                    timer.setStartTime(SystemClock.uptimeMillis());
+                    timer.removeHandlerCallback();
+                    timerValue.setText(timer.getCurrentTime());
 
-                    handler.removeCallbacks(updateTimeTask);
-                    handler.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
+                    timer.postDelayed();
+
+
 
                     timerOn = false;
                     blocked = true;
@@ -178,9 +163,13 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
                     maxY = 0;
                     maxZ = 0;
 
-                    startTime = SystemClock.uptimeMillis();
-                    handler.removeCallbacks(updateTimeTask);
-                    handler.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
+                    //startTime = SystemClock.uptimeMillis();
+                    timer.setStartTime(SystemClock.uptimeMillis());
+                    timer.removeHandlerCallback();
+                    timerValue.setText(timer.getCurrentTime());
+
+                    timer.postDelayed();
+
 
                     timerOn = true;
                     blocked = true;

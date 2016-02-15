@@ -1,64 +1,84 @@
 package christensenjohnsrud.funfit;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.util.Log;
+import android.widget.TextView;
 
 /**
  * Created by siljechristensen on 05/02/16.
  */
-public class Timer{
+public class Timer extends Activity{
 
+    private String className = "Timer.java";
     private long startTime = 0L;
-    private Handler customHandler = new Handler();
-    long timeInMilliseconds = 0L;
-    long timeSwapBuff = 0L;
-    long updatedTime = 0L;
+    private String currentTime;
+    private Handler handler = new Handler();
+    private int minutes;
+    private int seconds;
+    private int millis;
 
-    public Runnable updateTimerThread = new Runnable() {
+    private int textField;
+    private TextView tv;
+    private Context context;
+
+    public Timer(Context context, int textField){
+        if(handler == null){
+            handler = new Handler();
+        }
+        this.currentTime = "";
+        this.startTime = 0;
+        this.textField = textField;
+        this.context = context;
+        this.tv = (TextView)((Activity)context).findViewById(textField);
+
+    }
+
+    public void removeHandlerCallback(){
+        handler.removeCallbacks(updateTimeTask);
+    }
+    public void postDelayed(){
+        handler.postDelayed(updateTimeTask, 10);
+    }
+
+    // Timer
+    private Runnable updateTimeTask = new Runnable() {
         public void run() {
+            final long start = startTime;
+            long millis = SystemClock.uptimeMillis() - start;
+            int seconds = (int) (millis / 1000);
+            int minutes = seconds / 60;
+            seconds     = seconds % 60;
 
-            //TODO: Do what you need to do.
-            timeInMilliseconds = SystemClock.uptimeMillis() - startTime;
-            updatedTime = timeSwapBuff + timeInMilliseconds;
-            int secs = (int) (updatedTime / 1000);
-            int mins = secs / 60;
-            secs = secs % 60;
-            int milliseconds = (int) (updatedTime % 1000);
+            //TODO: ADD TIDELER
+            if (seconds < 10) {
+                setCurrentTime("" + minutes + ":0" + seconds);
 
-            //The "trick"
-            customHandler.postDelayed(this, 10); //This way the runnable is started every 10ms
+            } else {
+                setCurrentTime("" + minutes + ":" + seconds);
+            }
+            handler.postAtTime(this,
+                    start + (((minutes * 60) + seconds + 1) * 1000));
+
         }
     };
 
-    public long getUpdatedTime(){
-        timeInMilliseconds = SystemClock.uptimeMillis() - startTime;
-        updatedTime = timeSwapBuff + timeInMilliseconds;
-        return updatedTime;
+    public void setCurrentTime(String currentTime){
+        this.currentTime = currentTime;
+        updateTextField(currentTime);
+    }
+    public String getCurrentTime(){
+        return currentTime;
     }
 
-    public int getSecs(){
-        updatedTime = getUpdatedTime();
-        int secs = (int) (updatedTime / 1000);
-        secs = secs % 60;
-        return secs;
+    public void setStartTime(long startTime){
+        this.startTime = startTime;
     }
 
-    public long getMins(){
-        updatedTime = getUpdatedTime();
-        int secs = (int) (updatedTime / 1000);
-        int mins = secs / 60;
-        return mins;
+    public void updateTextField(String currentTime){
+        tv.setText(currentTime);
     }
-
-    public int getMillis(){
-        updatedTime = getUpdatedTime();
-        int milliseconds = (int) (updatedTime % 1000);
-        return  milliseconds;
-    }
-
-
-
-
 
 }
