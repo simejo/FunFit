@@ -34,7 +34,7 @@ import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.DetectedActivity;
 import java.util.ArrayList;
 
-public class Interval extends AppCompatActivity implements SensorEventListener, View.OnClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status> {
+public class Interval extends AppCompatActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status> {
 
     private String className = "Interval.java"; //To debug
 
@@ -63,9 +63,8 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     private ArrayList<DetectedActivity> mDetectedActivities;
 
     //BUGGING
-    private Button plus, minus;
-    private EditText accel_tv;
     private float accel_threshold = 10.0f;
+    private long startTimeGoogle;
 
     // SENSOR
     private SensorManager sensorManager;
@@ -103,14 +102,6 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_interval);
         context = this;
-
-        // FIND THRESHOLD HELPERS
-        plus = (Button) findViewById(R.id.button_plus2);
-        minus = (Button) findViewById(R.id.button_minus2);
-        accel_tv = (EditText) findViewById(R.id.textView_speed_threshold2);
-
-        plus.setOnClickListener(this);
-        minus.setOnClickListener(this);
 
         //  ACCELEROMETER
         sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
@@ -151,14 +142,12 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         // GOOGLE API ------------------------------------------------------------------------------------
 
         // Get a receiver for broadcasts from ActivityDetectionIntentService.
+        startTimeGoogle = SystemClock.uptimeMillis();
         mBroadcastReceiver = new ActivityDetectionBroadcastReceiver();
 
         //finding current activity text field
         currentActivity = (TextView) findViewById(R.id.current_activity);
 
-        // Enable either the Request Updates button or the Remove Updates button depending on
-        // whether activity updates have been requested.
-        //setButtonsEnabledState();
 
         // Reuse the value of mDetectedActivities from the bundle if possible. This maintains state
         // across device orientation changes. If mDetectedActivities is not stored in the bundle,
@@ -177,7 +166,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
             }
         }
         currentActivity.setText(mDetectedActivities.get(0).toString() + " " + mDetectedActivities.get(1).toString());
-        
+
         // Kick off the request to build GoogleApiClient.
         buildGoogleApiClient();
 
@@ -295,18 +284,6 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         }, 1000);
     }
 
-    @Override
-    public void onClick(View v) {
-        if(v.getId() == R.id.button_plus2){
-            accel_threshold++;
-            accel_tv.setText(accel_threshold + "");
-        }
-        else if(v.getId() == R.id.button_minus2){
-            accel_threshold--;
-            accel_tv.setText(accel_threshold + "");
-        }
-    }
-
 
     /**
      * Builds a GoogleApiClient. Uses the {@code #addApi} method to request the
@@ -387,7 +364,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
      * successfully, the {@code DetectedActivitiesIntentService} starts receiving callbacks when
      * activities are detected.
      */
-    public void requestActivityUpdatesButtonHandler(View view) {
+    public void requestActivityUpdatesHandler(View view) {
         if (!mGoogleApiClient.isConnected()) {
             Toast.makeText(this, "Not connected",
                     Toast.LENGTH_SHORT).show();
@@ -410,7 +387,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
      * successfully, the {@code DetectedActivitiesIntentService} stops receiving callbacks about
      * detected activities.
      */
-    public void removeActivityUpdatesButtonHandler(View view) {
+    public void removeActivityUpdatesHandler(View view) {
         if (!mGoogleApiClient.isConnected()) {
             Toast.makeText(this, "Not connected", Toast.LENGTH_SHORT).show();
             return;
@@ -437,10 +414,6 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
             setUpdatesRequestedState(requestingUpdates);
             currentActivity.setText("On result " + mDetectedActivities.get(0).toString() + " " + mDetectedActivities.get(1).toString());
 
-
-            // Update the UI. Requesting activity updates enables the Remove Activity Updates
-            // button, and removing activity updates enables the Add Activity Updates button.
-            //setButtonsEnabledState();
 
         } else {
             Log.e("Interval", "Error adding or removing activity detection: " + status.getStatusMessage());
@@ -507,7 +480,9 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         for(DetectedActivity da: detectedActivities){
             holder += da.toString() + ", ";
         }
-        currentActivity.setText("Update: " + holder);
+        String time = (SystemClock.uptimeMillis()-startTimeGoogle) + "";
+        //startTimeGoogle = (SystemClock.uptimeMillis()-startTimeGoogle);
+        currentActivity.setText("Update: " + holder + " " + time);
         Log.i(className, "updateDetectedActivitiesList");
     }
 
