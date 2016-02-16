@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="christensenjohnsrud.funfit">
 
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION"/>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -20,6 +22,8 @@
             android:label="@string/title_activity_interval"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity android:name=".LongDistance" />
+        <activity android:name=".IntervalLinear" />
+
         <activity android:name=".HeightMeasurement"></activity>
     </application>
 
