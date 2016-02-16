@@ -12,6 +12,12 @@
     tools:context="christensenjohnsrud.funfit.Interval">
 
     <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="current activity"
+        android:id="@+id/current_activity" />
+
+    <TextView
         android:id="@+id/timer_value"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

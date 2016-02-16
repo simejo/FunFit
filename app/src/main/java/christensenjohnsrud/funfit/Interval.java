@@ -10,6 +10,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -54,11 +55,6 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     //private ListView mDetectedActivitiesListView;
 
     /**
-     * Adapter backed by a list of DetectedActivity objects.
-     */
-    private DetectedActivitiesAdapter mAdapter;
-
-    /**
      * The DetectedActivities that we track in this sample. We use this for initializing the
      * {@code DetectedActivitiesAdapter}. We also use this for persisting state in
      * {@code onSaveInstanceState()} and restoring it in {@code onCreate()}. This ensures that each
@@ -82,7 +78,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     // TIMER
     private Button startButton;
     private Button pauseButton;
-    private TextView timerValue;
+    private TextView timerValue, currentActivity;
     private long startTime = 0L;
     private Handler handler = new Handler();
 
@@ -152,8 +148,13 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         });
 
 
+        // GOOGLE API ------------------------------------------------------------------------------------
+
         // Get a receiver for broadcasts from ActivityDetectionIntentService.
         mBroadcastReceiver = new ActivityDetectionBroadcastReceiver();
+
+        //finding current activity text field
+        currentActivity = (TextView) findViewById(R.id.current_activity);
 
         // Enable either the Request Updates button or the Remove Updates button depending on
         // whether activity updates have been requested.
@@ -166,8 +167,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         // filled in.
         if (savedInstanceState != null && savedInstanceState.containsKey(
                 Constants.DETECTED_ACTIVITIES)) {
-            mDetectedActivities = (ArrayList<DetectedActivity>) savedInstanceState.getSerializable(
-                    Constants.DETECTED_ACTIVITIES);
+            mDetectedActivities = (ArrayList<DetectedActivity>) savedInstanceState.getSerializable(Constants.DETECTED_ACTIVITIES);
         } else {
             mDetectedActivities = new ArrayList<DetectedActivity>();
 
@@ -176,14 +176,14 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
                 mDetectedActivities.add(new DetectedActivity(Constants.MONITORED_ACTIVITIES[i], 0));
             }
         }
-
-        // Bind the adapter to the ListView responsible for display data for detected activities.
-        mAdapter = new DetectedActivitiesAdapter(this, mDetectedActivities);
-        //mDetectedActivitiesListView.setAdapter(mAdapter);
-
+        currentActivity.setText(mDetectedActivities.get(0).toString() + " " + mDetectedActivities.get(1).toString());
+        
         // Kick off the request to build GoogleApiClient.
         buildGoogleApiClient();
+
     }
+
+
 
     // Timer
     private Runnable updateTimeTask = new Runnable() {
@@ -225,9 +225,17 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         if (axisY > maxY) maxY = axisY;
         if (axisZ > maxZ) maxZ = axisZ;
 
+
+        if (!mGoogleApiClient.isConnected()) {
+            Toast.makeText(this, "Not connected",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         if (startTimerCountDown > 0){
             startTimerCountDown--;
         }
+
 
         else{
             startThreshold = accel_threshold;
@@ -284,7 +292,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
             public void run() {
                 blocked = false;
             }
-        }, 3000);
+        }, 1000);
     }
 
     @Override
@@ -316,6 +324,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     protected void onStart() {
         super.onStart();
         mGoogleApiClient.connect();
+
     }
 
     @Override
@@ -346,6 +355,12 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     @Override
     public void onConnected(Bundle connectionHint) {
         Log.i("Interval", "Connected to GoogleApiClient");
+        ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(
+                mGoogleApiClient,
+                Constants.DETECTION_INTERVAL_IN_MILLISECONDS,
+                getActivityDetectionPendingIntent()
+        ).setResultCallback(this);
+        currentActivity.setText("OnConnected ");
     }
 
     @Override
@@ -383,6 +398,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
                 Constants.DETECTION_INTERVAL_IN_MILLISECONDS,
                 getActivityDetectionPendingIntent()
         ).setResultCallback(this);
+        currentActivity.setText("requestAUBH " + mDetectedActivities.get(0).toString() + " " + mDetectedActivities.get(1).toString());
     }
 
     /**
@@ -419,6 +435,8 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
             // Toggle the status of activity updates requested, and save in shared preferences.
             boolean requestingUpdates = !getUpdatesRequestedState();
             setUpdatesRequestedState(requestingUpdates);
+            currentActivity.setText("On result " + mDetectedActivities.get(0).toString() + " " + mDetectedActivities.get(1).toString());
+
 
             // Update the UI. Requesting activity updates enables the Remove Activity Updates
             // button, and removing activity updates enables the Add Activity Updates button.
@@ -434,7 +452,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
      */
     private PendingIntent getActivityDetectionPendingIntent() {
         Intent intent = new Intent(this, DetectedActivitiesIntentService.class);
-
+        Log.i(className, "getActivityDetectionPendingIntent");
         // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
         // requestActivityUpdates() and removeActivityUpdates().
         return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -455,6 +473,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
      * updates.
      */
     private boolean getUpdatesRequestedState() {
+        Log.i(className, "getUpdatesRequestedState");
         return getSharedPreferencesInstance()
                 .getBoolean(Constants.ACTIVITY_UPDATES_REQUESTED_KEY, false);
     }
@@ -484,7 +503,12 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
      * activities.
      */
     protected void updateDetectedActivitiesList(ArrayList<DetectedActivity> detectedActivities) {
-        mAdapter.updateActivities(detectedActivities);
+        String holder = "";
+        for(DetectedActivity da: detectedActivities){
+            holder += da.toString() + ", ";
+        }
+        currentActivity.setText("Update: " + holder);
+        Log.i(className, "updateDetectedActivitiesList");
     }
 
     /**
@@ -493,13 +517,15 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
      * the device.
      */
     public class ActivityDetectionBroadcastReceiver extends BroadcastReceiver {
-        protected static final String TAG = "activity-detection-response-receiver";
+        protected static final String TAG = "activity-detection";
 
         @Override
         public void onReceive(Context context, Intent intent) {
             ArrayList<DetectedActivity> updatedActivities =
                     intent.getParcelableArrayListExtra(Constants.ACTIVITY_EXTRA);
             updateDetectedActivitiesList(updatedActivities);
+            Log.i(TAG, "ActivityDetectionBroadcastReceiver");
+
         }
     }
 }
