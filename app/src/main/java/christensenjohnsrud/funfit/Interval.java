@@ -40,7 +40,6 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     private Button pauseButton;
     private TextView timerValue;
     private long startTime = 0L;
-    private Handler handler = new Handler();
     private Timer timer;
 
     // CONNECT TIMER AND ACCELERATION

@@ -16,9 +16,7 @@ public class Timer extends Activity{
     private long startTime = 0L;
     private String currentTime;
     private Handler handler = new Handler();
-    private int minutes;
-    private int seconds;
-    private int millis;
+
 
     private int textField;
     private TextView tv;
@@ -43,7 +41,6 @@ public class Timer extends Activity{
         handler.postDelayed(updateTimeTask, 10);
     }
 
-    // Timer
     private Runnable updateTimeTask = new Runnable() {
         public void run() {
             final long start = startTime;
@@ -67,8 +64,8 @@ public class Timer extends Activity{
 
     public void setCurrentTime(String currentTime){
         this.currentTime = currentTime;
-        updateTextField(currentTime);
-    }
+        tv.setText(currentTime);    }
+
     public String getCurrentTime(){
         return currentTime;
     }
@@ -77,8 +74,5 @@ public class Timer extends Activity{
         this.startTime = startTime;
     }
 
-    public void updateTextField(String currentTime){
-        tv.setText(currentTime);
-    }
 
 }
