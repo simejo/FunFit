@@ -1,5 +1,6 @@
 package christensenjohnsrud.funfit;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -16,11 +17,24 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.DetectedActivity;
+import com.google.android.gms.location.DetectedActivityCreator;
+
 import java.util.ArrayList;
 
-public class Interval extends AppCompatActivity implements SensorEventListener, View.OnClickListener{
+public class Interval extends AppCompatActivity implements SensorEventListener, View.OnClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status> {
 
     private String className = "Interval.java"; //To debug
+
+    //Google API
+    private GoogleApiClient client;
+    private Context context;
+
     //BUGGING
     private Button plus, minus;
     private EditText accel_tv;
@@ -61,6 +75,17 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_interval);
+        context = this;
+
+        //Google API
+        client = new GoogleApiClient.Builder(context)
+                .addApi(ActivityRecognition.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
+        DetectedActivity activity = new DetectedActivity(0,60);
+
+        Log.i("Activity", activity.toString());
 
         // FIND THRESHOLD HELPERS
         plus = (Button) findViewById(R.id.button_plus2);
@@ -221,5 +246,23 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     }
 
 
+    @Override
+    public void onConnected(Bundle bundle) {
 
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onResult(Status status) {
+
+    }
 }
