@@ -25,6 +25,13 @@
         <activity android:name=".IntervalLinear" />
 
         <activity android:name=".HeightMeasurement"></activity>
+
+        <!-- Service that provides activity recognition data. Setting the android:exported attribute
+        to "false" stops other apps from starting this service, even when using an explicit
+        intent. -->
+        <service
+            android:name=".DetectedActivitiesIntentService"
+            android:exported="false" />
     </application>
 
 </manifest>
