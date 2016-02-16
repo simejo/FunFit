@@ -214,13 +214,6 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         if (axisY > maxY) maxY = axisY;
         if (axisZ > maxZ) maxZ = axisZ;
 
-
-        if (!mGoogleApiClient.isConnected()) {
-            Toast.makeText(this, "Not connected",
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         if (startTimerCountDown > 0){
             startTimerCountDown--;
         }
@@ -332,12 +325,8 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     @Override
     public void onConnected(Bundle connectionHint) {
         Log.i("Interval", "Connected to GoogleApiClient");
-        ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(
-                mGoogleApiClient,
-                Constants.DETECTION_INTERVAL_IN_MILLISECONDS,
-                getActivityDetectionPendingIntent()
-        ).setResultCallback(this);
         currentActivity.setText("OnConnected ");
+        requestActivityUpdatesHandler();
     }
 
     @Override
@@ -364,7 +353,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
      * successfully, the {@code DetectedActivitiesIntentService} starts receiving callbacks when
      * activities are detected.
      */
-    public void requestActivityUpdatesHandler(View view) {
+    public void requestActivityUpdatesHandler() {
         if (!mGoogleApiClient.isConnected()) {
             Toast.makeText(this, "Not connected",
                     Toast.LENGTH_SHORT).show();
@@ -375,7 +364,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
                 Constants.DETECTION_INTERVAL_IN_MILLISECONDS,
                 getActivityDetectionPendingIntent()
         ).setResultCallback(this);
-        currentActivity.setText("requestAUBH " + mDetectedActivities.get(0).toString() + " " + mDetectedActivities.get(1).toString());
+        currentActivity.setText(mDetectedActivities.get(0).toString());
     }
 
     /**
@@ -387,7 +376,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
      * successfully, the {@code DetectedActivitiesIntentService} stops receiving callbacks about
      * detected activities.
      */
-    public void removeActivityUpdatesHandler(View view) {
+    public void removeActivityUpdatesHandler() {
         if (!mGoogleApiClient.isConnected()) {
             Toast.makeText(this, "Not connected", Toast.LENGTH_SHORT).show();
             return;

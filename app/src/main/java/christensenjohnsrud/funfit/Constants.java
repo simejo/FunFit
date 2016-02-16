@@ -37,8 +37,7 @@ public final class Constants {
 
     public static final String SHARED_PREFERENCES_NAME = PACKAGE_NAME + ".SHARED_PREFERENCES";
 
-    public static final String ACTIVITY_UPDATES_REQUESTED_KEY = PACKAGE_NAME +
-            ".ACTIVITY_UPDATES_REQUESTED";
+    public static final String ACTIVITY_UPDATES_REQUESTED_KEY = PACKAGE_NAME + ".ACTIVITY_UPDATES_REQUESTED";
 
     public static final String DETECTED_ACTIVITIES = PACKAGE_NAME + ".DETECTED_ACTIVITIES";
 
