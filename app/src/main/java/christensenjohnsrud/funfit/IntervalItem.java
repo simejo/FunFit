@@ -14,21 +14,15 @@ public class IntervalItem {
 
     public Type itemType;
     public String itemDuration;
-    public float maxX;
-    public float maxY;
-    public float maxZ;
 
-    public IntervalItem (int itemId, Type type, String duration, float maxX, float maxY, float maxZ){
+    public IntervalItem (int itemId, Type type, String duration){
         this.itemId = itemId;
         this.itemType = type;
         this.itemDuration = duration;
-        this.maxX = maxX;
-        this.maxY = maxY;
-        this.maxZ = maxZ;
     }
 
     public String toString(){
-        return itemId + " " + itemType + " Duration: " + itemDuration + " X= " + maxX + " Y= " + maxY + " Z=" + maxZ;
+        return itemId + " " + itemType + " Duration: " + itemDuration;
     }
 
 }

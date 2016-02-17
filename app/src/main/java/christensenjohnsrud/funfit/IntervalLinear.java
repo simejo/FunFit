@@ -141,7 +141,7 @@ public class IntervalLinear extends AppCompatActivity implements SensorEventList
 
                 if (timerOn){
                     String currentIntervalDuration = timerValue.getText().toString();
-                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration, maxX, maxY, maxZ));
+                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration));
                     maxX = 0;
                     maxY = 0;
                     maxZ = 0;
@@ -157,7 +157,7 @@ public class IntervalLinear extends AppCompatActivity implements SensorEventList
                 }
                 else{
                     String currentIntervalDuration = timerValue.getText().toString();
-                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration, maxX, maxY, maxZ));
+                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration));
                     maxX = 0;
                     maxY = 0;
                     maxZ = 0;
