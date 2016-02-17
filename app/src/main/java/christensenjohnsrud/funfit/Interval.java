@@ -198,6 +198,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     @Override
     public void onSensorChanged(SensorEvent event) {
         // http://developer.android.com/guide/topics/sensors/sensors_motion.html
+        /*
         final float alpha = 0.8f;
 
         // Isolate the force of gravity with the low-pass filter.
@@ -260,6 +261,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
 
             }
         }
+        */
     }
 
     @Override
@@ -325,7 +327,6 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     @Override
     public void onConnected(Bundle connectionHint) {
         Log.i("Interval", "Connected to GoogleApiClient");
-        currentActivity.setText("OnConnected ");
         requestActivityUpdatesHandler();
     }
 
@@ -390,8 +391,6 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     }
 
     /**
-     * Runs when the result of calling requestActivityUpdates() and removeActivityUpdates() becomes
-     * available. Either method can complete successfully or with an error.
      *
      * @param status The Status returned through a PendingIntent when requestActivityUpdates()
      *               or removeActivityUpdates() are called.
@@ -472,6 +471,35 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         String time = (SystemClock.uptimeMillis()-startTimeGoogle) + "";
         //startTimeGoogle = (SystemClock.uptimeMillis()-startTimeGoogle);
         currentActivity.setText("Update: " + holder + " " + time);
+
+        if ((detectedActivities.get(0).getType() == DetectedActivity.RUNNING ||
+                (detectedActivities.get(0).getType() == DetectedActivity.ON_FOOT && detectedActivities.get(1).getType() == DetectedActivity.RUNNING))){
+            if (timerOn){
+                String currentIntervalDuration = timerValue.getText().toString();
+                currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration, maxX, maxY, maxZ));
+
+                startTime = SystemClock.uptimeMillis();
+
+                handler.removeCallbacks(updateTimeTask);
+                handler.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
+
+                timerOn = false;
+                blocked = true;
+
+            }
+            else{
+                String currentIntervalDuration = timerValue.getText().toString();
+                currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration, maxX, maxY, maxZ));
+
+                startTime = SystemClock.uptimeMillis();
+                handler.removeCallbacks(updateTimeTask);
+                handler.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
+
+                timerOn = true;
+                blocked = true;
+            }
+        intervalItemId ++;
+        }
         Log.i(className, "updateDetectedActivitiesList");
     }
 
