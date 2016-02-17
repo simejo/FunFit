@@ -125,6 +125,8 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
                 Log.i(className, "starttime " + startTime);
                 //handler.removeCallbacks(updateTimeTask);
                 //handler.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
+                String currentIntervalDuration = timerValue.getText().toString();
+                currentResults.add(new IntervalItem(intervalItemId, null, currentIntervalDuration, 0, 0, 0));
             }
         });
 
