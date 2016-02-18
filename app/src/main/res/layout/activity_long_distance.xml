@@ -19,7 +19,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Chosen speed:" />
+        android:text="Accuracy:"
+        android:id="@+id/textView_accuracy" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Lower bound:" />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -31,14 +38,15 @@
             android:layout_height="wrap_content"
             android:text="-"
             android:layout_weight="1"
-            android:id="@+id/button_minus" />
+            android:id="@+id/button_minus_lower" />
 
         <EditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="numberDecimal"
-            android:id="@+id/textView_speed_threshold"
+            android:id="@+id/textView_speed_threshold_lower"
             android:ems="5"
+            android:text="6"
             android:layout_weight="1"
             android:layout_gravity="center_horizontal" />
 
@@ -47,9 +55,59 @@
             android:layout_height="wrap_content"
             android:text="+"
             android:layout_weight="1"
-            android:id="@+id/button_plus" />
+            android:id="@+id/button_plus_lower" />
 
     </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Upper bound:" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="-"
+            android:layout_weight="1"
+            android:id="@+id/button_minus_upper" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="numberDecimal"
+            android:id="@+id/textView_speed_threshold_upper"
+            android:ems="5"
+            android:text="9"
+            android:layout_weight="1"
+            android:layout_gravity="center_horizontal" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+"
+            android:layout_weight="1"
+            android:id="@+id/button_plus_upper" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:id="@+id/timer_long_distance"
+        android:text="00:00:00" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start"
+        android:id="@+id/button_timer_long_distance" />
 
 
 </LinearLayout>
