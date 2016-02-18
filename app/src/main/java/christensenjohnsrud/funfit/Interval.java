@@ -176,7 +176,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     @Override
     public void onSensorChanged(SensorEvent event) {
         // http://developer.android.com/guide/topics/sensors/sensors_motion.html
-        /*
+
         final float alpha = 0.8f;
 
         // Isolate the force of gravity with the low-pass filter.
@@ -245,7 +245,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
 
             }
         }
-        */
+
     }
 
     @Override
@@ -448,7 +448,8 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
      * activities.
      */
     protected void updateDetectedActivitiesList(ArrayList<DetectedActivity> detectedActivities) {
-        String holder = "";
+
+        /*String holder = "";
         for(DetectedActivity da: detectedActivities){
             holder += da.toString() + ", ";
         }
@@ -493,6 +494,8 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
             intervalItemId ++;
         }
         Log.i(className, "updateDetectedActivitiesList");
+
+        */
     }
 
     /**
