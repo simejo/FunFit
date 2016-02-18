@@ -35,7 +35,6 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
     private String className = "Interval.java"; //To debug
 
     //Google API
-    private GoogleApiClient client;
     private Context context;
     /**
      * A receiver for DetectedActivity objects broadcast by the
@@ -209,13 +208,8 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
                     maxY = 0;
                     maxZ = 0;
 
-                    timer.setStartTime(SystemClock.uptimeMillis());
-                    timer.removeHandlerCallback();
+                    timer.resetTimer();
                     timerValue.setText(timer.getCurrentTime());
-
-                    timer.postDelayed();
-
-
 
                     timerRunning = false;
                     blocked = true;
@@ -229,11 +223,9 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
                     maxZ = 0;
 
                     //startTime = SystemClock.uptimeMillis();
-                    timer.setStartTime(SystemClock.uptimeMillis());
-                    timer.removeHandlerCallback();
-                    timerValue.setText(timer.getCurrentTime());
 
-                    timer.postDelayed();
+                    timer.resetTimer();
+                    timerValue.setText(timer.getCurrentTime());
 
 
                     timerRunning = true;
@@ -455,6 +447,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         String time = (SystemClock.uptimeMillis()-startTimeGoogle) + "";
         //startTimeGoogle = (SystemClock.uptimeMillis()-startTimeGoogle);
         currentActivity.setText("Update: " + holder + " " + time);
+        Log.i(className, "updateDetectedActivitiesList(ArrayList<DetectedActivity> detectedActivities");
 
         if ((detectedActivities.get(0).getType() == DetectedActivity.RUNNING ||
                 (detectedActivities.get(0).getType() == DetectedActivity.ON_FOOT && detectedActivities.get(1).getType() == DetectedActivity.RUNNING))) {

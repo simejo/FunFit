@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         if(v.getId() == R.id.button_interval){
-            startActivity(new Intent(this, Interval.class));
+            startActivity(new Intent(this, Interval.class)); // NB! Remember to change this if using another interval class
         }
         else if(v.getId() == R.id.button_long_distance){
             startActivity(new Intent(this, LongDistance.class));
