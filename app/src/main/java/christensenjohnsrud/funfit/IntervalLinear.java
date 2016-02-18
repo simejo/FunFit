@@ -19,14 +19,12 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
-public class IntervalLinear extends AppCompatActivity implements SensorEventListener, View.OnClickListener{
+public class IntervalLinear extends AppCompatActivity implements SensorEventListener{
 
     private String className = "Interval.java"; //To debug
 
 
     //BUGGING
-    private Button plus, minus;
-    private EditText accel_tv;
     private float accel_threshold = 10.0f;
 
     // SENSOR
@@ -65,13 +63,6 @@ public class IntervalLinear extends AppCompatActivity implements SensorEventList
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_interval);
-
-        plus = (Button) findViewById(R.id.button_plus2);
-        minus = (Button) findViewById(R.id.button_minus2);
-        accel_tv = (EditText) findViewById(R.id.textView_speed_threshold2);
-
-        plus.setOnClickListener(this);
-        minus.setOnClickListener(this);
 
         //  ACCELEROMETER
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -150,7 +141,7 @@ public class IntervalLinear extends AppCompatActivity implements SensorEventList
 
                 if (timerOn){
                     String currentIntervalDuration = timerValue.getText().toString();
-                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration, maxX, maxY, maxZ));
+                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration));
                     maxX = 0;
                     maxY = 0;
                     maxZ = 0;
@@ -166,7 +157,7 @@ public class IntervalLinear extends AppCompatActivity implements SensorEventList
                 }
                 else{
                     String currentIntervalDuration = timerValue.getText().toString();
-                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration, maxX, maxY, maxZ));
+                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration));
                     maxX = 0;
                     maxY = 0;
                     maxZ = 0;
@@ -201,15 +192,4 @@ public class IntervalLinear extends AppCompatActivity implements SensorEventList
         }, 2000); // Milliseconds before it will check whether the user's acceleration is more than the threshold
     }
 
-    @Override
-    public void onClick(View v) {
-        if(v.getId() == R.id.button_plus2){
-            accel_threshold++;
-            accel_tv.setText(accel_threshold + "");
-        }
-        else if(v.getId() == R.id.button_minus2){
-            accel_threshold--;
-            accel_tv.setText(accel_threshold + "");
-        }
-    }
 }
