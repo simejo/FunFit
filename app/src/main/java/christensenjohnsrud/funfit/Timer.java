@@ -75,6 +75,8 @@ public class Timer extends Activity{
     }
 
     public void resetTimer(){
+        Log.i(className, " starting timer");
+
         setStartTime(SystemClock.uptimeMillis());
         removeHandlerCallback();
         postDelayed();

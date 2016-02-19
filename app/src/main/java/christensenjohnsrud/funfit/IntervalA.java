@@ -1,12 +1,6 @@
 package christensenjohnsrud.funfit;
 
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -14,7 +8,6 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -22,7 +15,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 
 import java.util.ArrayList;
@@ -52,11 +44,13 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
     private TextView timerValue, currentActivity;
     private long startTime = 0L;
     private Timer timer;
-    private Handler handler;
+    private Handler handlerCheck, handlerRunPause;
 
     // CONNECT TIMER AND ACCELERATION
     private boolean timerRunning = false;
-    private boolean blocked = false; // Activation/deactivation of timer for a given time
+    private boolean blockedCheck = false; // Activation/deactivation of timer for a given time
+    private boolean blockedRunPause = false;
+
     private int startTimerCountDown= 15;
     private ListView resultsList;
 
@@ -105,8 +99,8 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
             public void onClick(View view) {
                 startTime = SystemClock.uptimeMillis();
                 Log.i(className, "starttime " + startTime);
-                //handler.removeCallbacks(updateTimeTask);
-                //handler.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
+                //handlerCheck.removeCallbacks(updateTimeTask);
+                //handlerCheck.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
                 String currentIntervalDuration = timerValue.getText().toString();
                 currentResults.add(new IntervalItem(intervalItemId, null, currentIntervalDuration, 0, 0, 0));
             }
@@ -115,8 +109,8 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
         pauseButton = (Button) findViewById(R.id.pause_button);
         pauseButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
-                //handler.removeCallbacks(updateTimeTask);
-                blocked = true;
+                //handlerCheck.removeCallbacks(updateTimeTask);
+                blockedCheck = true;
             }
         });
 
@@ -160,74 +154,57 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
             startTimerCountDown--;
             Log.i(className, "" + startTimerCountDown);
         }
-        else {
-            if (!blocked){
-
-                int acc = getMax((int)axisX, (int)axisY, (int)axisZ);
-                accelDataList[accel_counter] = acc;
-                accel_counter += 1;
-                accel_counter = accel_counter % accelDataListLength;
-                String holder = "";
-                for (Integer x : accelDataList){
-                    holder += x + ", ";
-                }
-                Log.i(className + " ACCEL DATA", holder);
-                running();
-
-                blocked=true;
-                //currentResults.add(new IntervalItem(intervalItemId, null, "", (int)axisX, (int)axisY, (int)axisZ));
-                blockTimer();
-
-                adapter.notifyDataSetChanged();
-                intervalItemId++;
-
+        else if(!blockedCheck) {
+            // Updating accelDataList
+            int acc = getMax((int)axisX, (int)axisY, (int)axisZ);
+            accelDataList[accel_counter] = acc;
+            accel_counter += 1;
+            accel_counter = accel_counter % accelDataListLength;
+            // Testing
+            String holder = "";
+            for (Integer x : accelDataList){
+                holder += x + ", ";
             }
-            /*
-            if ((axisX >= startThreshold || axisY >= startThreshold || axisZ >= startThreshold) && !blocked && !timerRunning) {
+            Log.i(className + " ACCEL DATA", holder);
+            running();
+
+            blockedCheck =true;
+            blockTimerCheck();
+
+
+            // Start drag / done with pause
+            if (!blockedRunPause && !timerRunning && running()) {
                 Log.i(className, "*accelerometer* x=" + Math.round(axisX) + " y=" + Math.round(axisY) + " z=" + Math.round(axisZ));
                 if (intervalItemId != 0) {
                     String currentIntervalDuration = timerValue.getText().toString();
                     currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration, maxX, maxY, maxZ));
                 }
 
-                maxX = 0;
-                maxY = 0;
-                maxZ = 0;
-
-                timer.setStartTime(SystemClock.uptimeMillis());
-                timer.removeHandlerCallback();
+                timer.resetTimer();
                 timerValue.setText(timer.getCurrentTime());
-
-                timer.postDelayed();
 
 
                 timerRunning = true;
-                blocked = true;
-                blockTimer();
+                blockedRunPause = true;
+                blockTimerRunPause();
                 intervalItemId ++;
                 adapter.notifyDataSetChanged();
             }
-            else if ((axisX >= stopThreshold || axisY >= stopThreshold || axisZ >= stopThreshold) && !blocked && timerRunning){
+            // Start pause/ done with drag
+            else if (timerRunning && !running()){
                 String currentIntervalDuration = timerValue.getText().toString();
                 currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration, maxX, maxY, maxZ));
-                maxX = 0;
-                maxY = 0;
-                maxZ = 0;
 
-                timer.setStartTime(SystemClock.uptimeMillis());
-                timer.removeHandlerCallback();
+                timer.resetTimer();
                 timerValue.setText(timer.getCurrentTime());
 
-                timer.postDelayed();
-
-
                 timerRunning = false;
-                blocked = true;
-                blockTimer();
+                blockedRunPause = true;
+                blockTimerRunPause();
                 intervalItemId ++;
                 adapter.notifyDataSetChanged();
             }
-            */
+
         }
     }
 
@@ -237,15 +214,26 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
 
     }
 
-    private void blockTimer(){
-        handler = null;
-        handler = new Handler();
-        handler.postDelayed(new Runnable() {
+    private void blockTimerCheck(){
+        handlerCheck = null;
+        handlerCheck = new Handler();
+        handlerCheck.postDelayed(new Runnable() {
             @Override
             public void run() {
-                blocked = false;
+                blockedCheck = false;
             }
         }, 1000);
+
+    }
+    private void blockTimerRunPause(){
+        handlerRunPause = null;
+        handlerRunPause = new Handler();
+        handlerRunPause.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                blockedRunPause = false;
+            }
+        }, 6000);
 
     }
 
