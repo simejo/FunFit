@@ -125,7 +125,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
                 //handler.removeCallbacks(updateTimeTask);
                 //handler.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
                 String currentIntervalDuration = timerValue.getText().toString();
-                currentResults.add(new IntervalItem(intervalItemId, null, currentIntervalDuration, 0, 0, 0));
+                currentResults.add(new IntervalItem(intervalItemId, null, currentIntervalDuration));
             }
         });
 
@@ -205,7 +205,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
 
                 if (timerRunning){
                     String currentIntervalDuration = timerValue.getText().toString();
-                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration, maxX, maxY, maxZ));
+                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration));
                     maxX = 0;
                     maxY = 0;
                     maxZ = 0;
@@ -219,7 +219,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
                 }
                 else{
                     String currentIntervalDuration = timerValue.getText().toString();
-                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration, maxX, maxY, maxZ));
+                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration));
                     maxX = 0;
                     maxY = 0;
                     maxZ = 0;
@@ -452,12 +452,16 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         currentActivity.setText("Update: " + holder + " " + time);
         Log.i(className, "updateDetectedActivitiesList(ArrayList<DetectedActivity> detectedActivities");
 
-        if ((detectedActivities.get(0).getType() == DetectedActivity.RUNNING ||
-                (detectedActivities.get(0).getType() == DetectedActivity.ON_FOOT && detectedActivities.get(1).getType() == DetectedActivity.RUNNING))) {
-            if (!timerRunning) {
+        int currentType0 = detectedActivities.get(0).getType();
+
+
+
+        if (currentType0 == DetectedActivity.RUNNING ||
+                (currentType0 == DetectedActivity.ON_FOOT &&  detectedActivities.get(1).getType() == DetectedActivity.RUNNING)) {
+            if(!timerRunning){
                 if (intervalItemId != 0){
                     String currentIntervalDuration = timerValue.getText().toString();
-                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration, maxX, maxY, maxZ));
+                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration));
                 }
                 else{
                     Toast.makeText(this,"STARTED",Toast.LENGTH_SHORT).show();
@@ -477,9 +481,8 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         }
         else if (timerRunning){
             String currentIntervalDuration = timerValue.getText().toString();
-            currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration, maxX, maxY, maxZ));
+            currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration));
 
-            //startTime = SystemClock.uptimeMillis();
             timer.setStartTime(SystemClock.uptimeMillis());
             timer.removeHandlerCallback();
             timerValue.setText(timer.getCurrentTime());
@@ -491,6 +494,13 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         Log.i(className, "updateDetectedActivitiesList");
 
         */
+
+        String holder = "";
+        for(DetectedActivity da: detectedActivities){
+            holder += da.toString() + ", ";
+        }
+        String time = (SystemClock.uptimeMillis()-startTimeGoogle) + "";
+        currentActivity.setText("Update: " + holder + " " + time);
     }
 
     /**

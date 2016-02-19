@@ -102,7 +102,7 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
                 //handlerCheck.removeCallbacks(updateTimeTask);
                 //handlerCheck.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
                 String currentIntervalDuration = timerValue.getText().toString();
-                currentResults.add(new IntervalItem(intervalItemId, null, currentIntervalDuration, 0, 0, 0));
+                currentResults.add(new IntervalItem(intervalItemId, null, currentIntervalDuration));
             }
         });
 
@@ -177,7 +177,7 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
                 Log.i(className, "*accelerometer* x=" + Math.round(axisX) + " y=" + Math.round(axisY) + " z=" + Math.round(axisZ));
                 if (intervalItemId != 0) {
                     String currentIntervalDuration = timerValue.getText().toString();
-                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration, maxX, maxY, maxZ));
+                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration));
                 }
 
                 timer.resetTimer();
@@ -193,7 +193,7 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
             // Start pause/ done with drag
             else if (timerRunning && !running()){
                 String currentIntervalDuration = timerValue.getText().toString();
-                currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration, maxX, maxY, maxZ));
+                currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration));
 
                 timer.resetTimer();
                 timerValue.setText(timer.getCurrentTime());
