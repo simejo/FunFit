@@ -23,34 +23,28 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
 
     private String className = "IntervalA.java"; //To debug
 
-
     //BUGGING
     private float accel_threshold = 6f;
-    private long startTimeGoogle;
     private Button plus, minus;
     private EditText accel_tv;
 
     // SENSOR
     private SensorManager sensorManager;
     private Sensor sensor;
-    //TODO: Find appropriate default values
-    private Float startThreshold = 14f;
-    private Float stopThreshold = 11f;
     private float[] gravity = new float[3];
 
     // TIMER
     private Button startButton;
     private Button pauseButton;
-    private TextView timerValue, currentActivity;
+    private TextView timerValue;
     private long startTime = 0L;
     private Timer timer;
     private Handler handlerCheck, handlerRunPause;
 
     // CONNECT TIMER AND ACCELERATION
-    private boolean timerRunning = false;
-    private boolean blockedCheck = false; // Activation/deactivation of timer for a given time
-    private boolean blockedRunPause = false;
-
+    private boolean timerRunning = false;       // Timer is for running or pause
+    private boolean blockedCheck = false;       // Avoid to check max acceleration too often
+    private boolean blockedRunPause = false;    // Avoid to start run/pause timer too often
     private int startTimerCountDown= 15;
     private ListView resultsList;
 
@@ -62,7 +56,7 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
     private float maxY = 0;
     private float maxZ = 0;
 
-    //TESTNG THINGS
+    // TESTNG
     /*The idea is to collect the last seconds of acceleration data, in order to check for how long
     * time the user may have been running but the google api did not detect it*/
     Integer[] accelDataList;
@@ -90,7 +84,7 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
         intervalItemId = 0;
         resultsList = (ListView) findViewById(R.id.list_view_interval_tracker);
         adapter = new ArrayAdapterItem(this, R.layout.list_view_row_item, currentResults);
-        // create a new ListView, set the adapter and item click listener
+        // Create a new ListView, set the adapter and item click listener
         resultsList.setAdapter(adapter);
 
         // HELP BUTTONS
@@ -129,9 +123,6 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
     @Override
     public void onSensorChanged(SensorEvent event) {
         // http://developer.android.com/guide/topics/sensors/sensors_motion.html
-        startThreshold = accel_threshold;
-        stopThreshold = accel_threshold;
-
         final float alpha = 0.8f;
 
         // Isolate the force of gravity with the low-pass filter.
@@ -140,8 +131,6 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
         gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
 
         // Remove the gravity contribution with the high-pass filter.
-
-        //Log.i(className, "x: " + (int) (event.values[0] - gravity[0]) + " y: " + (int) (event.values[1] - gravity[1]) + " z: " + (int) (event.values[2] - gravity[2]));
         float axisX = Math.abs(event.values[0] - gravity[0]);
         float axisY = Math.abs(event.values[1] - gravity[1]);
         float axisZ = Math.abs(event.values[2] - gravity[2]);
@@ -150,9 +139,9 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
         if (axisY > maxY) maxY = axisY;
         if (axisZ > maxZ) maxZ = axisZ;
 
+        // Need this because it takes several iterations to remove the gravity
         if (startTimerCountDown > 0) {
             startTimerCountDown--;
-            Log.i(className, "" + startTimerCountDown);
         }
         else if(!blockedCheck) {
             // Updating accelDataList
@@ -160,21 +149,15 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
             accelDataList[accel_counter] = acc;
             accel_counter += 1;
             accel_counter = accel_counter % accelDataListLength;
-            // Testing
-            String holder = "";
-            for (Integer x : accelDataList){
-                holder += x + ", ";
-            }
-            Log.i(className + " ACCEL DATA", holder);
-            running();
+
+            // Test
+            printAccelDataList();
 
             blockedCheck =true;
             blockTimerCheck();
 
-
-            // Start drag / done with pause
+            // Start drag / Done with pause
             if (!blockedRunPause && !timerRunning && running()) {
-                Log.i(className, "*accelerometer* x=" + Math.round(axisX) + " y=" + Math.round(axisY) + " z=" + Math.round(axisZ));
                 if (intervalItemId != 0) {
                     String currentIntervalDuration = timerValue.getText().toString();
                     currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration));
@@ -183,14 +166,13 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
                 timer.resetTimer();
                 timerValue.setText(timer.getCurrentTime());
 
-
                 timerRunning = true;
                 blockedRunPause = true;
                 blockTimerRunPause();
                 intervalItemId ++;
                 adapter.notifyDataSetChanged();
             }
-            // Start pause/ done with drag
+            // Start pause / Done with drag
             else if (timerRunning && !running()){
                 String currentIntervalDuration = timerValue.getText().toString();
                 currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration));
@@ -204,15 +186,12 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
                 intervalItemId ++;
                 adapter.notifyDataSetChanged();
             }
-
         }
     }
 
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-    }
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
     private void blockTimerCheck(){
         handlerCheck = null;
@@ -234,7 +213,6 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
                 blockedRunPause = false;
             }
         }, 6000);
-
     }
 
     @Override
@@ -265,6 +243,14 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
         }
 
         return false;
+    }
+
+    public void printAccelDataList(){
+        String holder = "";
+        for (Integer x : accelDataList){
+            holder += x + ", ";
+        }
+        Log.i(className + " ACCEL DATA", holder);
     }
 
 
