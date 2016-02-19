@@ -170,6 +170,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         // Kick off the request to build GoogleApiClient.
         buildGoogleApiClient();
 
+
     }
 
 
@@ -202,6 +203,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
             startThreshold = accel_threshold;
             if ((axisX >= startThreshold || axisY >= startThreshold || axisZ >= startThreshold) && !blocked){
                 Log.i(className, "*accelerometer* x=" + Math.round(axisX) + " y=" + Math.round(axisY) + " z=" + Math.round(axisZ));
+
                 if (timerRunning){
                     String currentIntervalDuration = timerValue.getText().toString();
                     currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration, maxX, maxY, maxZ));
