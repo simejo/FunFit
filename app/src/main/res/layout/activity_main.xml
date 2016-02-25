@@ -26,6 +26,12 @@
         android:text="@string/height_measurement"
         android:id="@+id/button_height_measurement"
         android:layout_gravity="center_horizontal" />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/height_measurement_camera"
+        android:id="@+id/button_height_measurement_camera"
+        android:layout_gravity="center_horizontal" />
 
     <Button
         android:layout_width="wrap_content"

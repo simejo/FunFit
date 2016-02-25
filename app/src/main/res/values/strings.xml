@@ -5,6 +5,8 @@
     <string name="interval">Interval</string>
     <string name="long_distance">Long distance</string>
     <string name="height_measurement">Height measurement</string>
+    <string name="height_measurement_camera">Height measurement with camera</string>
+
     <string name="random_workout">Random workout</string>
     <string name="user_data">User data</string>
     <string name="title_activity_interval">Interval</string>

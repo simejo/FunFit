@@ -1,6 +1,5 @@
 package christensenjohnsrud.funfit;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -9,7 +8,7 @@ import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
-    private Button btn_interval, btn_long_distance, btn_height_measurement;
+    private Button btn_interval, btn_long_distance, btn_height_measurement, btn_height_measurement_camera;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,10 +18,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn_interval = (Button) findViewById(R.id.button_interval);
         btn_long_distance = (Button) findViewById(R.id.button_long_distance);
         btn_height_measurement = (Button) findViewById(R.id.button_height_measurement);
+        btn_height_measurement_camera = (Button) findViewById(R.id.button_height_measurement_camera);
 
         btn_interval.setOnClickListener(this);
         btn_long_distance.setOnClickListener(this);
         btn_height_measurement.setOnClickListener(this);
+        btn_height_measurement_camera.setOnClickListener(this);
 
 
     }
@@ -38,6 +39,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         else if(v.getId() == R.id.button_height_measurement){
             startActivity(new Intent(this, HeightMeasurement.class));
+        }
+        else if(v.getId() == R.id.button_height_measurement_camera){
+            startActivity(new Intent(this, HeightMeasurementCamera.class));
         }
     }
 }

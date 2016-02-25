@@ -18,6 +18,11 @@
         <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
         <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
 
+
+        <uses-permission android:name="android.permission.CAMERA" />
+        <uses-feature android:name="android.hardware.camera2"/> <!-- was Camera -->
+        <uses-feature android:name="android.hardware.camera2.autofocus" />
+
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -32,6 +37,7 @@
         <activity android:name=".LongDistance" />
         <activity android:name=".IntervalLinear" />
         <activity android:name=".IntervalA" />
+        <activity android:name=".HeightMeasurementCamera" />
 
         <activity android:name=".HeightMeasurement"></activity>
 
