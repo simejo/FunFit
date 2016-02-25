@@ -15,7 +15,7 @@ public class HighMeasurementTesting extends Activity {
     short audioData[];
     double finalData[];
     int bufferSize,srate;
-    String TAG;
+    String TAG = "Testing class";
     public boolean recording;
     AudioRecord recorder;
     Complex[] fftArray;
@@ -124,6 +124,5 @@ public class HighMeasurementTesting extends Activity {
         }
 
         return transformed;
-
     }
 }

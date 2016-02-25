@@ -1,7 +1,11 @@
 package christensenjohnsrud.funfit;
 
+
 /**
  * Created by simen on 2/23/16.
+ *
+ * http://introcs.cs.princeton.edu/java/97data/FFT.java
+ *
  */
 /******************************************************************************
  *  Compilation:  javac FFT.java

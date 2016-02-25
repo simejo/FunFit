@@ -2,6 +2,9 @@ package christensenjohnsrud.funfit;
 
 /**
  * Created by simen on 2/23/16.
+ *
+ * http://introcs.cs.princeton.edu/java/97data/Complex.java.html
+ *
  */
 /******************************************************************************
  *  Compilation:  javac Complex.java

@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             startActivity(new Intent(this, LongDistance.class));
         }
         else if(v.getId() == R.id.button_height_measurement){
-            startActivity(new Intent(this, HighMeasurementTesting.class));
+            startActivity(new Intent(this, HeightMeasurement.class));
         }
     }
 }
