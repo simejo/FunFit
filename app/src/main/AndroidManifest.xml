@@ -34,6 +34,8 @@
         <activity android:name=".IntervalLinear" />
         <activity android:name=".IntervalA" />
         <activity android:name=".HeightMeasurement" />
+        <activity android:name=".HeightMeasurementV2" />
+        <activity android:name=".measure" />
 
         <!--
         Service that provides activity recognition data. Setting the android:exported attribute

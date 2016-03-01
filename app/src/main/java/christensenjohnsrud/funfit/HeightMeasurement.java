@@ -42,6 +42,7 @@ public class HeightMeasurement extends AppCompatActivity implements View.OnClick
     private boolean isRecording;
     private Thread recordingThread;
     byte bData[];
+    double dData[];
 
 
     @Override
@@ -101,7 +102,7 @@ public class HeightMeasurement extends AppCompatActivity implements View.OnClick
     }
 
     public void startRecord(){
-        /*try {
+        try {
             audioBuffer = new short[bufferSize];
             audioInput.startRecording();
             audioInput.read(audioBuffer, 0, bufferSize);
@@ -110,7 +111,7 @@ public class HeightMeasurement extends AppCompatActivity implements View.OnClick
         catch (IllegalStateException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-        }*/
+        }
 
         record.setEnabled(false);
 
@@ -118,14 +119,14 @@ public class HeightMeasurement extends AppCompatActivity implements View.OnClick
         //ToneGenerator toneG = new ToneGenerator(AudioManager.STREAM_ALARM, ToneGenerator.MAX_VOLUME);
         //toneG.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 1000);
 
-        audioInput.startRecording();
+        /*audioInput.startRecording();
         isRecording = true;
         recordingThread = new Thread(new Runnable() {
             public void run() {
                 writeAudioDataToFile();
             }
         }, "AudioRecorder Thread");
-        recordingThread.start();
+        recordingThread.start();*/
     }
 
     public void stopRecord(){
@@ -142,12 +143,11 @@ public class HeightMeasurement extends AppCompatActivity implements View.OnClick
     }
 
     private double[] convert_short_to_double(short data[]) {
+
         // TODO Auto-generated method stub
         double[] transformed = new double[data.length];
 
         for (int j=0;j<data.length;j++) {
-
-            Log.i("AUDIO BUFFER", data[j] + "");
             transformed[j] = (double)data[j];
         }
         return transformed;
@@ -185,6 +185,7 @@ public class HeightMeasurement extends AppCompatActivity implements View.OnClick
                 // // writes the data to file from buffer
                 // // stores the voice buffer
                 bData = convert_short_to_byte(sData);
+                dData = convert_short_to_double(sData);
                 Log.i("WRITE TO FILE converted","converted to byte" + bData.toString());
 
                 os.write(bData, 0, 1024 * 2);
@@ -234,14 +235,13 @@ public class HeightMeasurement extends AppCompatActivity implements View.OnClick
         }
         else
             Log.d("TCAudio", "audio track is not initialised ");
-
     }
 
     private void findFFT(){
         Complex[] fftTempArray = new Complex[bufferSize];
         for (int i=0; i<bufferSize; i++)
         {
-            fftTempArray[i] = new Complex(bData[i], 0);
+            fftTempArray[i] = new Complex(dData[i], 0);
         }
         Complex[] fftArray = FFT.fft(fftTempArray);
         int counter = 1;
@@ -255,6 +255,5 @@ public class HeightMeasurement extends AppCompatActivity implements View.OnClick
                 counter++;
             }
         }
-
     }
 }

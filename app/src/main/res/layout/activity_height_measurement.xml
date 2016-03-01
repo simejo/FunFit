@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -7,6 +7,7 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:orientation="vertical"
     tools:context="christensenjohnsrud.funfit.HeightMeasurement">
 
     <TextView
@@ -14,32 +15,37 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="Large Text"
-        android:id="@+id/textView_height_measurement"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="88dp" />
+        android:id="@+id/textView_height_measurement" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Send Ping"
-        android:id="@+id/button_send_ping"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true" />
+        android:id="@+id/button_send_ping" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="New Button2"
-        android:id="@+id/button2"
-        android:layout_below="@+id/button_send_ping"
-        android:layout_centerHorizontal="true" />
+        android:id="@+id/button2" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="New Button3"
-        android:id="@+id/button3"
-        android:layout_below="@+id/button"
-        android:layout_centerHorizontal="true" />
-</RelativeLayout>
+        android:id="@+id/button3" />
+    <CheckBox
+        android:text="Maximize Volume"
+        android:id="@+id/CheckMaxVol"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+
+    </CheckBox>
+
+    <christensenjohnsrud.funfit.GraphView
+        android:id="@+id/SinglePingSurface"
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        android:layout_weight="1" />
+</LinearLayout>
