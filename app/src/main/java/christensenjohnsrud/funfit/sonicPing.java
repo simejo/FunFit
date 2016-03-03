@@ -32,7 +32,7 @@ public class sonicPing {
 	float[] result;
 	float[] periodBuffer;
 	float distFactor = 1.f;
-	float[][] lastDistance = new float[5][2]; //0/0 = not set. Otherwise [0]->Distance, [1]->Intensity
+	float[][] peakList = new float[5][2]; //0/0 = not set. Otherwise [0]->Distance, [1]->Intensity
 	boolean first = true;
 	boolean camMic = true;
 	public int error = 0;
@@ -41,7 +41,6 @@ public class sonicPing {
 	
 	public sonicPing() {
 		this(1, 100, 3000, 2000, 500, 10);
-		Log.d(TAG, "default contructor");
 	}
 	
 	public sonicPing(int msChirpLength, int msChirpPause, int HzCarrierFreq, int HzBandwidth, int msAddRecordLength, int nChirpRepeat) {
@@ -89,8 +88,8 @@ public class sonicPing {
 		periodBuffer = new float[sPeriod];
 		
 		for (int i = 0; i < 5; i++) {
-			lastDistance[i][0] = 0.f;
-			lastDistance[i][1] = 0.f;
+			peakList[i][0] = 0.f;
+			peakList[i][1] = 0.f;
 		}
 	}
 
@@ -101,20 +100,6 @@ public class sonicPing {
 			return false;
 		}
 		return true;
-	}
-	
-	public void setDistFactor(String unit, float sos) {
-		Log.d(TAG, "setUnit()");
-		if (unit.equals("ft"))
-			distFactor = sos/(float)sRate/2.f*3.2808399f;
-		else if (unit.equals("in"))
-			distFactor = sos/(float)sRate/2.f*39.3700787f;
-		else
-			distFactor = sos/(float)sRate/2.f;
-	}
-	
-	public void setCamMic(boolean cm) {
-		camMic = cm;
 	}
 	
 	private int getMaxRate() {
@@ -162,7 +147,6 @@ public class sonicPing {
 				source = MediaRecorder.AudioSource.CAMCORDER;
 				ar = new AudioRecord(source, sRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, brSizeInc*2);
 			} catch (Exception e) {
-			} finally {
 			}
 		}
 		if (ar == null) {
@@ -170,16 +154,13 @@ public class sonicPing {
 				source = MediaRecorder.AudioSource.MIC;
 				ar = new AudioRecord(source, sRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, brSizeInc*2);
 			} catch (Exception e) {
-			} finally {
 			}
 		}
 		if (ar == null) {
 			error = -4;
 			return null;
 		}
-		
-		Log.d(TAG, "Changing to high priority");
-//		Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
+
 		if (!first) {
 			Log.d(TAG, "Not the first call, reloading audio data");
 			at.reloadStaticData();
@@ -193,7 +174,6 @@ public class sonicPing {
 		} catch (Exception e) {
 			error = -6;
 			return null;
-		} finally {
 		}
 		Log.d(TAG, "Starting audio track -> play");
 		at.play();
@@ -215,17 +195,12 @@ public class sonicPing {
 				Log.d(TAG, "WARNING: Wait exception!");
 			}
 		}
-		
+
 		Log.d(TAG, "Stopping recording");
 		ar.stop();
-		
-		Log.d(TAG, "Releasing AudioRecord");
 		ar.release();
 		ar = null;
-		
-		Log.d(TAG, "Changing back to default priority");
-//		Process.setThreadPriority(Process.THREAD_PRIORITY_DEFAULT);
-		
+
 		Log.d(TAG, "Stopping audio track");
 		at.stop();
 		
@@ -237,40 +212,23 @@ public class sonicPing {
 		}
 		
 		Log.d(TAG, "Finding first echo and averaging periods");
-		averagePeriod(recording, brSize, findBeginning(recording, chirp, addRecordLength*sRate/1000, bSize), periodBuffer, sPeriod);
+		averagePeriod(recording, findBeginning(recording, chirp, addRecordLength * sRate / 1000, bSize), periodBuffer, sPeriod);
 		Log.d(TAG, "Calculating cross-correlation");
-		crossCorrelate(periodBuffer, chirp, result, sPeriod, bSize, bResSize);
+		crossCorrelate(periodBuffer, chirp, result, bSize, bResSize);
 		Log.d(TAG, "Applying Gaussian filter");
-		smooth(result, bResSize, 5);
+		gaussianFilter(result, bResSize, 5);
 		Log.d(TAG, "Normalizing result");
-		normalize(result, bResSize, 5, 2 * chirpLength * sRate / 1000);
-
-		Log.d(TAG, "Ping is done, returning result.");
+		normalize(result, bResSize, 2 * chirpLength * sRate / 1000);
 		Log.d(TAG, "---PING() ENDS HERE---");
 		return result;
 	}
 	
-	public int getResultSize() {
-		Log.d(TAG, "getResultSize()");
-		return bResSize;
+	public float[][] getPeakList() {
+		Log.d(TAG, "getPeakList()");
+		return peakList;
 	}
 	
-	public float getMaxRange() {
-		Log.d(TAG, "getMaxRange()");
-		return bResSize*distFactor;
-	}
-	
-	public float getMinRange() {
-		Log.d(TAG, "getMinRange()");
-		return 2*bSize*distFactor;
-	}
-	
-	public float[][] getLastDistance() {
-		Log.d(TAG, "getLastDistance()");
-		return lastDistance;
-	}
-	
-	private void crossCorrelate(float[] f, short[] g, float[] res, int fSize, int gSize, int resSize) { //res has to be of the size fSize-gSize+1 > 0, returns the max of the cross-correlation
+	private void crossCorrelate(float[] f, short[] g, float[] res, int gSize, int resSize) { //res has to be of the size fSize-gSize+1 > 0, returns the max of the cross-correlation
 		Log.d(TAG, "crossCorrelate()");
 		for (int T = 0; T < resSize; T++) {
 			res[T] = 0.f;
@@ -282,7 +240,7 @@ public class sonicPing {
 		}
 	}
 	
-	private void averagePeriod(short[] rec, int recSize, int zero, float[] pB, int sPeriod) {
+	private void averagePeriod(short[] rec, int zero, float[] pB, int sPeriod) {
 		Log.d(TAG, "averagePeriod()");
 		for (int i = 0; i < sPeriod; i++) {
 			pB[i] = 0.f;
@@ -308,9 +266,10 @@ public class sonicPing {
 		}
 		return i;
 	}
-	
-	private void smooth(float[] buffer, int size, int amount) {
-		Log.d(TAG, "smooth()");
+
+	//Removing noise
+	private void gaussianFilter(float[] buffer, int size, int amount) {
+		Log.d(TAG, "gaussianFilter()");
 		float[] temp = buffer.clone();
 		for (int i = 0; i < size/3; i++) {
 			buffer[i] = 0;
@@ -320,12 +279,12 @@ public class sonicPing {
 		}
 	}
 	
-	private void normalize(float[] buffer, int size, int amount, int offset) {
+	private void normalize(float[] buffer, int size, int offset) {
 		Log.d(TAG, "normalize()");
 		int i, j;
 		for (i = 0; i < 5; i++) {
-			lastDistance[i][0] = 0.f;
-			lastDistance[i][1] = 0.f;
+			peakList[i][0] = 0.f;
+			peakList[i][1] = 0.f;
 		}
 		boolean localMax;
 		for (i = offset; i < size/3; i++) {
@@ -335,26 +294,18 @@ public class sonicPing {
 					localMax = false;
 			if (localMax) { //The neighboring peaks are smaller - otherwise skip this point
 				j = 5;
-				while (j > 0 && lastDistance[j-1][1] < buffer[i]) {
+				while (j > 0 && peakList[j-1][1] < buffer[i]) {
 					if (j < 5) {
-						lastDistance[j][0] = lastDistance[j-1][0];
-						lastDistance[j][1] = lastDistance[j-1][1];
+						peakList[j][0] = peakList[j-1][0];
+						peakList[j][1] = peakList[j-1][1];
 					}
 					j--;
 				}
 				if (j < 5) {
-					lastDistance[j][0] = i*distFactor;
-					lastDistance[j][1] = buffer[i];
+					peakList[j][0] = i*distFactor;
+					peakList[j][1] = buffer[i];
 				}
 			}
 		}
-
-//Normalize me later, when displayed
-		
-//		for (i = 0; i < size/3; i++)
-//			buffer[i] /= lastDistance[0][1];
-		
-//		for (i = 4; i >= 0; i--)
-//			lastDistance[i][1] /= lastDistance[0][1];
 	}
 }
