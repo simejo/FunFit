@@ -18,11 +18,11 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.TextView;
 
 public class measure extends Activity implements OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener {
 	public final static String SHARED_PREFS_NAME="sonarsettings";
     sonicPing sp;
-    GraphView gv;
     CheckBox cb;
     AudioManager am;
     String unit = "m";
@@ -31,6 +31,7 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
     boolean pinging = false;
     Button button;
 	String TAG = "measure.java";
+	TextView tv_height;
 
     private final Handler mHandler = new Handler();
     private final Runnable contPing = new Runnable() {
@@ -46,7 +47,6 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
 					dieWithError("Unknown error in ping(). (contPing), error = " + sp.error_detail + ", detail = " + sp.error_detail);
 				return;
 			}
-    		gv.setGraph(res, sp.getResultSize(), sp.getMinRange(), sp.getMaxRange(), sp.getLastDistance());
 			mHandler.removeCallbacks(contPing);
 			if (pinging) {
 				mHandler.postDelayed(contPing, 100);
@@ -84,12 +84,12 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
         
         button = (Button)findViewById(R.id.button_send_ping);
         button.setOnClickListener(this);
-        
-        gv = (GraphView)findViewById(R.id.SinglePingSurface);
+
         cb = (CheckBox)findViewById(R.id.CheckMaxVol);
         
         mPrefs = measure.this.getSharedPreferences(SHARED_PREFS_NAME, 0);
 		mPrefs.registerOnSharedPreferenceChangeListener(this);
+		tv_height = (TextView) findViewById(R.id.textView_height_measurement);
 		onSharedPreferenceChanged(mPrefs, null);
     }
 
@@ -114,7 +114,15 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
 					dieWithError("Unknown error in ping(). (singlePing), error = " + sp.error_detail + ", detail = " + sp.error_detail);
 				return;
 			}
-    		gv.setGraph(res, sp.getResultSize(), sp.getMinRange(), sp.getMaxRange(), sp.getLastDistance());
+
+			int counter = 0;
+			for (float[] x : sp.getLastDistance()){
+				Log.d(TAG + " peaks", counter + ": " + x + "    " + ((Float) (Math.round(x[0] * 100) / 100.f)).toString());
+			}
+			float[][] results = sp.getLastDistance();
+			float final_height = ((Float) (Math.round(results[0][0] * 100) / 100.f));
+			tv_height.setText(final_height + "");
+
     	}
     	if ((!contMode || pinging) && oldVolume > -100)
     		am.setStreamVolume(AudioManager.STREAM_MUSIC, oldVolume, 0);
@@ -147,10 +155,7 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
     
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
     	Log.d(TAG, "onSharedPreferenceChanged()");
-    	if (prefs.getBoolean("show_previous", true))
-    		gv.showPrev = 4;
-    	else
-    		gv.showPrev = 0;
+
     	if (prefs.getBoolean("continuous", false)) {
     		contMode = true;
     		sp = new sonicPing(1, 100, 3000, 2000, 250, 2);
@@ -183,7 +188,6 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
     	} catch (Exception e) {
     		SoS = 340.f;
     	}
-    	gv.setUnit(unit);
     	sp.setDistFactor(unit, SoS);
     	
     	pinging = false;

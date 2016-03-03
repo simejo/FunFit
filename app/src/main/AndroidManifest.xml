@@ -33,8 +33,6 @@
         <activity android:name=".LongDistance" />
         <activity android:name=".IntervalLinear" />
         <activity android:name=".IntervalA" />
-        <activity android:name=".HeightMeasurement" />
-        <activity android:name=".HeightMeasurementV2" />
         <activity android:name=".measure" />
 
         <!--
@@ -46,7 +44,6 @@
             android:name=".DetectedActivitiesIntentService"
             android:exported="false" />
 
-        <activity android:name=".HighMeasurementTesting"></activity>
     </application>
 
 </manifest>

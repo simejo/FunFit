@@ -153,14 +153,12 @@ public class sonicPing {
 	
 	public float[] ping() {
 		Log.d(TAG, "ping()");
-		Log.d(TAG, "---GALAXY S FREEZE AHEAD?---");
 		int recRes = 0;
-		
-		Log.d(TAG, "Creating AudioRecord");
 		int source;
 		ar = null;
 		if (camMic) {
 			try {
+				Log.d(TAG,"Cam Mic == True");
 				source = MediaRecorder.AudioSource.CAMCORDER;
 				ar = new AudioRecord(source, sRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, brSizeInc*2);
 			} catch (Exception e) {
