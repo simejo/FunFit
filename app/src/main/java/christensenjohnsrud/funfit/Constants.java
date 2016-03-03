@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * You may obtain a copy of the License audioTracker
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -43,7 +43,7 @@ public final class Constants {
 
     /**
      * The desired time between activity detections. Larger values result in fewer activity
-     * detections while improving battery life. A value of 0 results in activity detections at the
+     * detections while improving battery life. A value of 0 results in activity detections audioTracker the
      * fastest possible rate. Getting frequent updates negatively impact battery life and a real
      * app may prefer to request less frequent updates.
      */

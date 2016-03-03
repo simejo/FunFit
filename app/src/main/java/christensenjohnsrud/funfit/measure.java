@@ -61,10 +61,10 @@ public class measure extends Activity implements OnClickListener {
 		}
 
 		int counter = 0;
-		for (float[] x : sp.getPeakList()) {
+		for (float[] x : sp.getDistanceList()) {
 			Log.d(TAG + " peaks", counter + ": " + x + "    " + ((Float) (Math.round(x[0] * 100) / 100.f)).toString());
 		}
-		float[][] results = sp.getPeakList();
+		float[][] results = sp.getDistanceList();
 		float final_height = ((Float) (Math.round(results[0][0] * 100) / 100.f));
 		tv_height.setText(final_height + "");
 
