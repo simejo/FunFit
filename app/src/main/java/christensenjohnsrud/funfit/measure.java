@@ -10,6 +10,7 @@ import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -29,12 +30,12 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
     boolean contMode = false;
     boolean pinging = false;
     Button button;
-    HeadsetReceiver hr;
-    
+	String TAG = "measure.java";
+
     private final Handler mHandler = new Handler();
     private final Runnable contPing = new Runnable() {
 		public void run() {
-			//Log.d("sonar", "contPing.run()");
+			Log.d(TAG, "contPing.run()");
 			float[] res = sp.ping();
 			if (res == null) {
 				if (sp.error == -5) {
@@ -54,7 +55,7 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
 	};
 /*	private final Runnable autoKill = new Runnable() {
 		public void run() {
-			//Log.d("sonar", "autoKill.run()");
+			Log.d(TAG, "autoKill.run()");
 			dieWithError("Automatic self-termination. Hope this works :)");
 		}
 	};*/
@@ -68,14 +69,10 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
     
     @Override
     public void onCreate(Bundle savedInstanceState) {
-    	//Log.d("sonar", "onCreate()");
+    	Log.d(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
-        
-        hr = new HeadsetReceiver(measure.this); /* replace this by your receiver class */ 
-        IntentFilter inf = new IntentFilter(); 
-        inf.addAction("android.intent.action.HEADSET_PLUG"); 
-        registerReceiver(hr, inf); 
-        
+
+
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         
 //Create sp from settings
@@ -99,7 +96,7 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
     
 
     public void onClick(View v) {
-    	//Log.d("sonar", "onClick)");
+    	Log.d(TAG, "onClick)");
 //    	mHandler.postDelayed(autoKill, 5000);
     	int oldVolume = -100;
     	if ((!contMode || !pinging) && cb.isChecked()) {
@@ -135,7 +132,7 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
     }
     
     private void dieWithError(String error) {
-    	//Log.d("sonar", "dieWithError()");
+    	Log.d(TAG, "dieWithError()");
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setMessage(error + "\nPlease report this error and your device to DiConX@gmail.com");
 		builder.setCancelable(false);
@@ -149,7 +146,7 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
     }
     
     public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-    	//Log.d("sonar", "onSharedPreferenceChanged()");
+    	Log.d(TAG, "onSharedPreferenceChanged()");
     	if (prefs.getBoolean("show_previous", true))
     		gv.showPrev = 4;
     	else
@@ -197,9 +194,8 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
 	}
     
     public void onDestroy() {
-    	//Log.d("sonar", "onDestroy()");
+    	Log.d(TAG, "onDestroy()");
     	super.onDestroy();
-        unregisterReceiver(hr); 
     	pinging = false;
     	button.setText("Ping");
     	mHandler.removeCallbacks(contPing);
@@ -208,7 +204,7 @@ public class measure extends Activity implements OnClickListener, SharedPreferen
     
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
-    	//Log.d("sonar", "onWindowsFocusChanged()");
+    	Log.d(TAG, "onWindowsFocusChanged()");
     	if (!hasFocus) {
         	pinging = false;
         	button.setText("Ping");
