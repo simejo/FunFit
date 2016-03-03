@@ -14,18 +14,18 @@ public class sonicPing {
 	static int sType = AudioManager.STREAM_MUSIC;
 	static int sRate = AudioTrack.getNativeOutputSampleRate(sType);
 	static int[] possibleRates = {48000, 44100, 22050, 11025, 8000};
-	static int chirpLength; //milli seconds
-	static int chirpPause; //milli seconds
+	static int chirpLength;	//milli seconds
+	static int chirpPause;	//milli seconds
 	static int chirpRepeat;
-	static int carrierFreq; //Hz
-	static int bandwidth; //Hz
-	static int bSize; //Chirp
-	static int bResSize; //Result
-	static int bsSize; //Chirp sequence
-	static int sPeriod; //Chirp sequence period (in shorts)
+	static int carrierFreq;	//Hz
+	static int bandwidth;	//Hz
+	static int bSize;		//Chirp
+	static int bResSize; 	//Result
+	static int bsSize; 		//Chirp sequence
+	static int sPeriod; 	//Chirp sequence period (in shorts)
 	static int addRecordLength; //milli seconds
-	static int brSize; //Recording used buffer size
-	static int brSizeInc; //Recording true buffer sized for higher minBufferSize demands
+	static int brSize; 		//Recording used buffer size
+	static int brSizeInc; 	//Recording true buffer sized for higher minBufferSize demands
 	short[] chirp;
 	short[] chirp_sequence;
 	short[] recording;
@@ -93,11 +93,11 @@ public class sonicPing {
 			lastDistance[i][1] = 0.f;
 		}
 	}
-
+	// checkRate returns true if we can successfully create an AudioRecord object with the given rate
 	private boolean checkRate(int rate) {
 		Log.d(TAG, "checkRate()");
-		int record = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT); 
-		if ((record) < 0) {
+		int bSize = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT);
+		if ((bSize) < 0) {
 			return false;
 		}
 		return true;
@@ -120,15 +120,17 @@ public class sonicPing {
 	private int getMaxRate() {
 		Log.d(TAG, "getMaxRate()");
 		int rate = AudioTrack.getNativeOutputSampleRate(sType);
-		if (checkRate(rate))
+		if (checkRate(rate)) {
+			Log.d(TAG, "Checkrate(rate) " + rate);
 			return rate;
+		}
 		for (int i = 0; i < possibleRates.length; i++) {
 			rate = possibleRates[i];
 			if (checkRate(rate))
-				Log.d(TAG, "Checkrate == rate == " + rate);
+				Log.d(TAG, "Checkrate(rate) " + rate);
 				return rate;
 		}
-		Log.d(TAG, "Checkrate != rate --> -1");
+		Log.d(TAG, "Checkrate rate --> -1");
 		return -1;
 			
 	}
@@ -153,10 +155,8 @@ public class sonicPing {
 	
 	public float[] ping() {
 		Log.d(TAG, "ping()");
-		Log.d(TAG, "---GALAXY S FREEZE AHEAD?---");
 		int recRes = 0;
 		
-		Log.d(TAG, "Creating AudioRecord");
 		int source;
 		ar = null;
 		if (camMic) {
