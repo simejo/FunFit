@@ -26,8 +26,8 @@ public class sonicPing {
 	static int chirpLength;			// Milli seconds
 	static int chirpPause;			// Milli seconds
 	static int chirpRepeat;
-	static int carrierFreq;			// Hz
-	static int bandwidth;			// Hz
+	static int carrierFreq;			// The center frequency or the frequency of a carrier wave. Hz
+	static int bandwidth;			// The difference between the upper and lower frequencies. Hz
 	static int bufferChirpSize;		// Chirp
 	static int bufferResultSize; 	// Result
 	static int bufferChirpSequenceSize; //Chirp sequence
@@ -35,6 +35,7 @@ public class sonicPing {
 	static int addRecordLength; 	//milli seconds
 	static int bufferRecordSize; 	//Recording used buffer size
 
+	private float speedOfSound = 340.f; //Check for temperature?
 
 	// Use a short to save memory in large arrays, in situations where the memory savings actually matters
 	short[] chirp;
@@ -43,7 +44,7 @@ public class sonicPing {
 
 	float[] result;
 	float[] periodBuffer;
-	float distFactor = 1.f;
+	float distanceFactor = 1.f;
 	float[][] distanceList = new float[5][2]; //0/0 = not set. Otherwise [0]->Distance, [1]->Probability
 	public int error = 0;
 	String TAG = "sonicPing.java";
@@ -70,10 +71,10 @@ public class sonicPing {
 
 		bufferChirpSize =  sampleRate * chirpLength / 1000;
 		bufferRecordSize =  sampleRate * (addRecordLength+chirpRepeat*(chirpLength+chirpPause)) / 1000;
-		bufferResultSize =  sampleRate * (chirpPause-2*chirpLength) / 1000;
+		bufferResultSize =  sampleRate * (chirpPause-2*chirpLength) / 1000; //WHY chirpPause-2*chirpLength?
 		chirpSequencePeriod = sampleRate * (chirpLength+chirpPause) / 1000;
 		bufferChirpSequenceSize =  chirpRepeat * chirpSequencePeriod;
-		distFactor = 340/(float) sampleRate /2.f;
+		distanceFactor = speedOfSound / (float) sampleRate / 2.f; //Divided by 2 since it travels twice the length
 		
 		Log.d(TAG, "bufferChirpSize = " + bufferChirpSize +  ", minBufferSize = " + AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT));
 
@@ -256,7 +257,7 @@ public class sonicPing {
 					w--;
 				}
 				if (w < 5) {
-					distanceList[w][0] = y*distFactor;
+					distanceList[w][0] = y* distanceFactor;
 					distanceList[w][1] = buffer[y];
 				}
 			}

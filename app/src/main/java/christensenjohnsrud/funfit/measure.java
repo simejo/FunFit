@@ -60,13 +60,16 @@ public class measure extends Activity implements OnClickListener {
 			tv_height.setText("Please ping again");
 		}
 
-		int counter = 0;
+		int counter = 1;
+		String textHolder = "";
 		for (float[] x : sp.getDistanceList()) {
 			Log.d(TAG + " peaks", counter + ": " + x + "    " + ((Float) (Math.round(x[0] * 100) / 100.f)).toString());
+			textHolder += counter + ": " + x[0] + ", ";
+			counter ++;
 		}
-		float[][] results = sp.getDistanceList();
-		float final_height = ((Float) (Math.round(results[0][0] * 100) / 100.f));
-		tv_height.setText(final_height + "");
+		//float[][] results = sp.getDistanceList();
+		//float final_height = ((Float) (Math.round(results[0][0] * 100) / 100.f));
+		tv_height.setText(textHolder);
 
 
 		if (pinging && oldVolume > -100)
