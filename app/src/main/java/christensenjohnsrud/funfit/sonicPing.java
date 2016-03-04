@@ -11,24 +11,27 @@ import android.util.Log;
 public class sonicPing {
 	AudioTrack audioTracker;
 	AudioRecord audioRecorder;
-	static int sType = AudioManager.STREAM_MUSIC;
-	static int sRate = AudioTrack.getNativeOutputSampleRate(sType);
+	static int streamType = AudioManager.STREAM_MUSIC;
+	static int sampleRate = AudioTrack.getNativeOutputSampleRate(streamType);
 	static int[] possibleRates = {48000, 44100, 22050, 11025, 8000};
-	static int chirpLength;	//milli seconds
-	static int chirpPause;	//milli seconds
+	static int chirpLength;			//milli seconds
+	static int chirpPause;			//milli seconds
 	static int chirpRepeat;
-	static int carrierFreq;	//Hz
-	static int bandwidth;	//Hz
-	static int bSize;		//Chirp
-	static int bResSize; 	//Result
-	static int bsSize; 		//Chirp sequence
-	static int sPeriod; 	//Chirp sequence period (in shorts)
-	static int addRecordLength; //milli seconds
-	static int brSize; 		//Recording used buffer size
-	static int brMaxMinBuffer; 	//Recording true buffer sized for higher minBufferSize demands
+	static int carrierFreq;			//Hz
+	static int bandwidth;			//Hz
+	static int bufferChirpSize;		//Chirp
+	static int bufferResultSize; 	//Result
+	static int bufferChirpSequenceSize; //Chirp sequence
+	static int chirpSequencePeriod; //Chirp sequence period (in shorts)
+	static int addRecordLength; 	//milli seconds
+	static int bufferRecordSize; 	//Recording used buffer size
+	static int brMaxMinBuffer; 		//Recording true buffer sized for higher minBufferSize demands
+
+	// Use a short to save memory in large arrays, in situations where the memory savings actually matters
 	short[] chirp;
 	short[] chirp_sequence;
 	short[] recordingBuffer;
+
 	float[] result;
 	float[] periodBuffer;
 	float distFactor = 1.f;
@@ -42,9 +45,9 @@ public class sonicPing {
 	
 	public sonicPing(int msChirpLength, int msChirpPause, int HzCarrierFreq, int HzBandwidth, int msAddRecordLength, int nChirpRepeat) {
 		Log.d(TAG, "sonicPing() (constructor)");
-		sRate = getMaxRate();
-		Log.d(TAG, "sRate = " + sRate);
-		if (sRate < 1) {
+		sampleRate = getMaxRate();
+		Log.d(TAG, "sampleRate = " + sampleRate);
+		if (sampleRate < 1) {
 			error = -1;
 			return;
 		}
@@ -54,28 +57,28 @@ public class sonicPing {
 		carrierFreq = HzCarrierFreq;
 		chirpRepeat = nChirpRepeat;
 		bandwidth = HzBandwidth;
-		bSize =  sRate * chirpLength / 1000;
+		bufferChirpSize =  sampleRate * chirpLength / 1000;
 		addRecordLength = msAddRecordLength;
-		brSize =  sRate * (addRecordLength+chirpRepeat*(chirpLength+chirpPause)) / 1000;
-		brMaxMinBuffer = Math.max(brSize, AudioRecord.getMinBufferSize(sRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT)*16); //Ugly fix for Samsung (Suck it!)
-		bResSize =  sRate * (chirpPause-2*chirpLength) / 1000;
-		sPeriod = sRate * (chirpLength+chirpPause) / 1000;
-		bsSize =  chirpRepeat * sPeriod;
-		distFactor = 340/(float)sRate/2.f;
+		bufferRecordSize =  sampleRate * (addRecordLength+chirpRepeat*(chirpLength+chirpPause)) / 1000;
+		brMaxMinBuffer = Math.max(bufferRecordSize, AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT)*16); //Ugly fix for Samsung (Suck it!)
+		bufferResultSize =  sampleRate * (chirpPause-2*chirpLength) / 1000;
+		chirpSequencePeriod = sampleRate * (chirpLength+chirpPause) / 1000;
+		bufferChirpSequenceSize =  chirpRepeat * chirpSequencePeriod;
+		distFactor = 340/(float) sampleRate /2.f;
 		
-		Log.d(TAG, "bSize = " + bSize + ", brMaxMinBuffer = " + brMaxMinBuffer + ", minBufferSize = " + AudioRecord.getMinBufferSize(sRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT));
+		Log.d(TAG, "bufferChirpSize = " + bufferChirpSize + ", brMaxMinBuffer = " + brMaxMinBuffer + ", minBufferSize = " + AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT));
 		
-		chirp = new short[bSize];
-		chirp_sequence = new short[bsSize];
+		chirp = new short[bufferChirpSize];
+		chirp_sequence = new short[bufferChirpSequenceSize];
 		buildChirp(chirp, chirp_sequence);
 		
-		audioTracker = new AudioTrack(sType, sRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, bsSize*2, AudioTrack.MODE_STATIC);
-		audioTracker.write(chirp_sequence, 0, bsSize);
+		audioTracker = new AudioTrack(streamType, sampleRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferChirpSequenceSize *2, AudioTrack.MODE_STATIC);
+		audioTracker.write(chirp_sequence, 0, bufferChirpSequenceSize);
 
 		recordingBuffer = new short[brMaxMinBuffer];
 		
-		result = new float[bResSize];
-		periodBuffer = new float[sPeriod];
+		result = new float[bufferResultSize];
+		periodBuffer = new float[chirpSequencePeriod];
 		
 		for (int i = 0; i < 5; i++) {
 			distanceList[i][0] = 0.f;
@@ -94,7 +97,7 @@ public class sonicPing {
 	
 	private int getMaxRate() {
 		Log.d(TAG, "getMaxRate()");
-		int rate = AudioTrack.getNativeOutputSampleRate(sType);
+		int rate = AudioTrack.getNativeOutputSampleRate(streamType);
 		if (checkRate(rate)) {
 			Log.d(TAG, "Checkrate(rate) " + rate);
 			return rate;
@@ -109,20 +112,20 @@ public class sonicPing {
 		return -1;
 			
 	}
-	
+	// Creates a chirp, a fast frequency sweep from 1000 Hz to 5000 Hz
 	private void buildChirp(short[] buffer, short[] chirp_sequence) {
 		Log.d(TAG, "buildChirp()");
-		for (int i = 0; i < bSize; i++) {
+		for (int i = 0; i < bufferChirpSize; i++) {
 			//create a sine with sweeping frequency: sin(2 Pi f(t) * t)
 			//The sweep goes from the (carrier - bandwidth/2) to (carrier + bandwidth/2): f(t) = carrierFreq + bandwidth*(t/T-0.5)
-			//Finally T = bSize / sRate
-			//and t = i / sRate
+			//Finally T = bufferChirpSize / sampleRate
+			//and t = i / sampleRate
 			//The sine is then scaled to the size of "short" and stored in the buffer
-			buffer[i] = (short)(Short.MAX_VALUE * Math.sin(2*Math.PI*(carrierFreq + bandwidth*(i/(double)bSize-0.5))*i/(double)sRate));
+			buffer[i] = (short)(Short.MAX_VALUE * Math.sin(2*Math.PI*(carrierFreq + bandwidth*(i/(double) bufferChirpSize -0.5))*i/(double) sampleRate));
 		}
-		for (int i = 0; i < bsSize; i++) {
-			if ((i % sPeriod) < bSize)
-				chirp_sequence[i] = buffer[i%sPeriod];
+		for (int i = 0; i < bufferChirpSequenceSize; i++) {
+			if ((i % chirpSequencePeriod) < bufferChirpSize)
+				chirp_sequence[i] = buffer[i% chirpSequencePeriod];
 			else
 				chirp_sequence[i] = 0;
 		}
@@ -135,20 +138,20 @@ public class sonicPing {
 		stopRecording();
 
 		// Finding first echo and averaging periods
-		averagePeriod(recordingBuffer, findBeginning(recordingBuffer, chirp, addRecordLength * sRate / 1000, bSize), periodBuffer, sPeriod);
+		averagePeriod(recordingBuffer, findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize), periodBuffer, chirpSequencePeriod);
 		// Calculating cross-correlation
-		crossCorrelate(periodBuffer, chirp, result, bSize, bResSize);
+		crossCorrelate(periodBuffer, chirp, result, bufferChirpSize, bufferResultSize);
 		// Applying Gaussian filter
-		gaussianFilter(result, bResSize, 5);
+		gaussianFilter(result, bufferResultSize, 5);
 		// Normalizing result
-		normalize(result, bResSize, 2 * chirpLength * sRate / 1000);
+		normalize(result, bufferResultSize, 2 * chirpLength * sampleRate / 1000);
 
 		return result;
 	}
 
 	public void startRecording(){
 		// CAMCORDER = Microphone audio source with same orientation as camera if available, the main device microphone otherwise
-		audioRecorder = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER, sRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, brMaxMinBuffer *2);
+		audioRecorder = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER, sampleRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, brMaxMinBuffer *2);
 		// Sets the playback head position within the static buffer to zero
 		audioTracker.reloadStaticData();
 		audioRecorder.startRecording();
@@ -231,7 +234,7 @@ public class sonicPing {
 		boolean localMax;
 		for (int y = offset; y < size/3; y++) {
 			localMax = true;
-			for (int z = -bSize; z <= bSize; z++)
+			for (int z = -bufferChirpSize; z <= bufferChirpSize; z++)
 				if (buffer[z+y] > buffer[y])
 					localMax = false;
 			if (localMax) { //The neighboring peaks are smaller - otherwise skip this point
