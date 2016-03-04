@@ -13,19 +13,27 @@ public class sonicPing {
 	AudioRecord audioRecorder;
 	static int streamType = AudioManager.STREAM_MUSIC;
 	static int sampleRate = AudioTrack.getNativeOutputSampleRate(streamType);
+
+	/* Possible rates:
+	 * 48000 - Standard audio sampling rate
+	 * 44100 - Audio CD
+	 * 22050 - Half the rate of Audio CD
+	 * 11025 - One quarter of Audio CD
+	 * 8000  - Telephone and Walkie-Talkie
+	 */
+
 	static int[] possibleRates = {48000, 44100, 22050, 11025, 8000};
-	static int chirpLength;			//milli seconds
-	static int chirpPause;			//milli seconds
+	static int chirpLength;			// Milli seconds
+	static int chirpPause;			// Milli seconds
 	static int chirpRepeat;
-	static int carrierFreq;			//Hz
-	static int bandwidth;			//Hz
-	static int bufferChirpSize;		//Chirp
-	static int bufferResultSize; 	//Result
+	static int carrierFreq;			// Hz
+	static int bandwidth;			// Hz
+	static int bufferChirpSize;		// Chirp
+	static int bufferResultSize; 	// Result
 	static int bufferChirpSequenceSize; //Chirp sequence
-	static int chirpSequencePeriod; //Chirp sequence period (in shorts)
-	static int addRecordLength; 	//milli seconds
-	static int bufferRecordSize; 	//Recording used buffer size
-	static int brMaxMinBuffer; 		//Recording true buffer sized for higher minBufferSize demands
+	static int chirpSequencePeriod; // Chirp sequence period (in shorts)
+	static int addRecordLength; 	// Milli seconds
+	static int bufferRecordSize; 	// Recording used buffer size
 
 	// Use a short to save memory in large arrays, in situations where the memory savings actually matters
 	short[] chirp;
@@ -60,13 +68,12 @@ public class sonicPing {
 		bufferChirpSize =  sampleRate * chirpLength / 1000;
 		addRecordLength = msAddRecordLength;
 		bufferRecordSize =  sampleRate * (addRecordLength+chirpRepeat*(chirpLength+chirpPause)) / 1000;
-		brMaxMinBuffer = Math.max(bufferRecordSize, AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT)*16); //Ugly fix for Samsung (Suck it!)
 		bufferResultSize =  sampleRate * (chirpPause-2*chirpLength) / 1000;
 		chirpSequencePeriod = sampleRate * (chirpLength+chirpPause) / 1000;
 		bufferChirpSequenceSize =  chirpRepeat * chirpSequencePeriod;
 		distFactor = 340/(float) sampleRate /2.f;
 		
-		Log.d(TAG, "bufferChirpSize = " + bufferChirpSize + ", brMaxMinBuffer = " + brMaxMinBuffer + ", minBufferSize = " + AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT));
+		Log.d(TAG, "bufferChirpSize = " + bufferChirpSize + ", minBufferSize = " + AudioRecord.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT));
 		
 		chirp = new short[bufferChirpSize];
 		chirp_sequence = new short[bufferChirpSequenceSize];
@@ -75,7 +82,7 @@ public class sonicPing {
 		audioTracker = new AudioTrack(streamType, sampleRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferChirpSequenceSize *2, AudioTrack.MODE_STATIC);
 		audioTracker.write(chirp_sequence, 0, bufferChirpSequenceSize);
 
-		recordingBuffer = new short[brMaxMinBuffer];
+		recordingBuffer = new short[bufferRecordSize];
 		
 		result = new float[bufferResultSize];
 		periodBuffer = new float[chirpSequencePeriod];
@@ -99,19 +106,17 @@ public class sonicPing {
 		Log.d(TAG, "getMaxRate()");
 		int rate = AudioTrack.getNativeOutputSampleRate(streamType);
 		if (checkRate(rate)) {
-			Log.d(TAG, "Checkrate(rate) " + rate);
 			return rate;
 		}
 		for (int i = 0; i < possibleRates.length; i++) {
 			rate = possibleRates[i];
 			if (checkRate(rate))
-				Log.d(TAG, "Checkrate(rate) " + rate);
 				return rate;
 		}
-		Log.d(TAG, "Checkrate rate --> -1");
 		return -1;
 			
 	}
+
 	// Creates a chirp, a fast frequency sweep from 1000 Hz to 5000 Hz
 	private void buildChirp(short[] buffer, short[] chirp_sequence) {
 		Log.d(TAG, "buildChirp()");
@@ -121,7 +126,8 @@ public class sonicPing {
 			//Finally T = bufferChirpSize / sampleRate
 			//and t = i / sampleRate
 			//The sine is then scaled to the size of "short" and stored in the buffer
-			buffer[i] = (short)(Short.MAX_VALUE * Math.sin(2*Math.PI*(carrierFreq + bandwidth*(i/(double) bufferChirpSize -0.5))*i/(double) sampleRate));
+			double A = (carrierFreq + bandwidth*(i/(double) bufferChirpSize -0.5))*i/(double) sampleRate;
+			buffer[i] = (short)(Short.MAX_VALUE * Math.sin(2*Math.PI*A));
 		}
 		for (int i = 0; i < bufferChirpSequenceSize; i++) {
 			if ((i % chirpSequencePeriod) < bufferChirpSize)
@@ -151,13 +157,13 @@ public class sonicPing {
 
 	public void startRecording(){
 		// CAMCORDER = Microphone audio source with same orientation as camera if available, the main device microphone otherwise
-		audioRecorder = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER, sampleRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, brMaxMinBuffer *2);
+		audioRecorder = new AudioRecord(MediaRecorder.AudioSource.CAMCORDER, sampleRate, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferRecordSize *2);
 		// Sets the playback head position within the static buffer to zero
 		audioTracker.reloadStaticData();
 		audioRecorder.startRecording();
 		audioTracker.play();
 		// Reads audio data from the audio hardware for recordingBuffer into a short array
-		audioRecorder.read(recordingBuffer, 0, brMaxMinBuffer);
+		audioRecorder.read(recordingBuffer, 0, bufferRecordSize);
 	}
 
 	public void stopRecording(){
