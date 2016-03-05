@@ -6,6 +6,8 @@ import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.util.Log;
+
+import java.math.BigDecimal;
 //import android.os.Process;
 
 public class sonicPing {
@@ -123,15 +125,20 @@ public class sonicPing {
 	// Creates a chirp, a fast frequency sweep from 1000 Hz to 5000 Hz
 	private void buildChirp(short[] buffer, short[] chirp_sequence) {
 		Log.d(TAG, "buildChirp()");
+
 		for (int i = 0; i < bufferChirpSize; i++) {
-			//create a sine with sweeping frequency: sin(2 Pi f(t) * t)
-			//The sweep goes from the (carrier - bandwidth/2) to (carrier + bandwidth/2): f(t) = carrierFreq + bandwidth*(t/T-0.5)
-			//Finally T = bufferChirpSize / sampleRate
-			//and t = i / sampleRate
-			//The sine is then scaled to the size of "short" and stored in the buffer
-			double A = (carrierFreq + bandwidth*(i/(double) bufferChirpSize -0.5))*i/(double) sampleRate;
-			buffer[i] = (short)(Short.MAX_VALUE * Math.sin(2*Math.PI*A));
+			// Create a sine with sweeping frequency: sin(2 Pi f(t) * t)
+			// Wiki: sin( 2*Pi ( f0*t + (k/2)*t^2) )
+			// The sweep goes from the (carrier - bandwidth/2) to (carrier + bandwidth/2): f(t) = carrierFreq + bandwidth*(t/T-0.5)
+			// Finally T = bufferChirpSize / sampleRate
+			// and t = i / sampleRate
+			// The sine is then scaled to the size of "short" and stored in the buffer
+			// Short does not have decimals, that is why we need to multiply the linear chirp with Short.MAX_VALUE
+
+			buffer[i] = (short)(Short.MAX_VALUE * Math.sin(2*Math.PI*(carrierFreq + bandwidth*(i*0.5/(double) bufferChirpSize -0.5))*i/(double) sampleRate));
 		}
+
+		// Adding the chirp data in the chirp_sequence
 		for (int i = 0; i < bufferChirpSequenceSize; i++) {
 			if ((i % chirpSequencePeriod) < bufferChirpSize)
 				chirp_sequence[i] = buffer[i% chirpSequencePeriod];
