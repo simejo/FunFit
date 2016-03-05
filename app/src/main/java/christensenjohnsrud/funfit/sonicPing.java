@@ -129,7 +129,7 @@ public class sonicPing {
 			//Finally T = bufferChirpSize / sampleRate
 			//and t = i / sampleRate
 			//The sine is then scaled to the size of "short" and stored in the buffer
-			double A = (carrierFreq + bandwidth*(i/(double) bufferChirpSize -0.5))*i/(double) sampleRate;
+			double A = (carrierFreq + bandwidth*((i/(double) bufferChirpSize)*0.5 -0.5))*i/(double) sampleRate;
 			buffer[i] = (short)(Short.MAX_VALUE * Math.sin(2*Math.PI*A));
 		}
 		for (int i = 0; i < bufferChirpSequenceSize; i++) {
@@ -182,6 +182,7 @@ public class sonicPing {
 	}
 	
 	private void crossCorrelate(float[] f, short[] g, float[] res, int gSize, int resSize) { //res has to be of the size fSize-gSize+1 > 0, returns the max of the cross-correlation
+		//		 crossCorrelate(periodBuffer, chirp, result, bufferChirpSize, bufferResultSize);
 		Log.d(TAG, "crossCorrelate()");
 		for (int T = 0; T < resSize; T++) {
 			res[T] = 0.f;
@@ -194,6 +195,8 @@ public class sonicPing {
 	}
 	
 	private void averagePeriod(short[] rec, int zero, float[] pB, int sPeriod) {
+		//		 averagePeriod(recordingBuffer, findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize), periodBuffer, chirpSequencePeriod);
+
 		Log.d(TAG, zero+"");
 		Log.d(TAG, "averagePeriod()");
 		for (int i = 0; i < sPeriod; i++) {
@@ -204,6 +207,7 @@ public class sonicPing {
 	}
 	
 	private int findBeginning(short[] rec, short[] chirp, int limit, int bSize) {
+		//		findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize)
 		Log.d(TAG, "findBeginning()");
 		float max = 0.f;
 		float temp;
@@ -223,6 +227,7 @@ public class sonicPing {
 
 	// Removing noise
 	private void gaussianFilter(float[] buffer, int size, int amount) {
+		//		 gaussianFilter(result, bufferResultSize, 5);
 		Log.d(TAG, "gaussianFilter()");
 		float[] temp = buffer.clone();
 		for (int i = 0; i < size/3; i++) {

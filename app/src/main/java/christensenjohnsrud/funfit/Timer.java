@@ -103,6 +103,17 @@ public class Timer extends Activity{
         //handler.postAtTime(this, startTime + (((totalTime[1] * 60) + totalTime[2] + 1) * 1000));
     }
 
+    public void finish() {
+        removeHandlerCallback();
+        totalTime[0] = 0;
+        totalTime[1] = 0;
+        totalTime[2] = 0;
+        totalTime[3] = 0;
+        setCurrentTime("00:00:00");
+
+
+    }
+
     public void convertTimeToArray(long totalMillis) {
         int seconds = (int) (totalMillis / 1000);
         int minutes = seconds / 60;

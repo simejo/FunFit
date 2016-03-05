@@ -13,6 +13,8 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
 import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -39,15 +41,15 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
 
     LocationManager locationManager;
     TextView tvCurrentSpeed, tvSpeedThresholdLower, tvSpeedThresholdUpper, tvAccuracy, tvTimer, tvCurrentActivity;
-    Button btnPlusLower, btnMinusLower, btnPlusUpper, btnMinusUpper, btnTimer;
+    Button btnPlusLower, btnMinusLower, btnPlusUpper, btnMinusUpper, btnTimer, btnFinish;
     private float speedThresholdLower, speedThresholdUpper;
     private double km_h = 3.6, mph = 2.2369;
     private Timer totalTimer, walkingTimer, runningTimer;
-    private boolean timerOn = false;
 
-    private boolean timerRunningOn = false, timerWalkingOn = false, timerTotalOn = false;
-    private boolean blocked = false; // Activation/deactivation of totalTimer for a given time
-    private int startTimerCountDown= 15;
+    private boolean timerRunningOn = false, timerWalkingOn = false, timerOn = false;
+    private int GPS_request_intensity = 5000;
+
+    private ToneGenerator tone;
 
     //Google API
     private long startTimeGoogle;
@@ -95,7 +97,7 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
             buildAlertMessageNoGps();
         }
 
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, GPS_request_intensity, 0, this);
         tvCurrentSpeed = (TextView) findViewById(R.id.textView_current_speed);
         tvAccuracy = (TextView) findViewById(R.id.textView_accuracy);
         tvTimer = (TextView) findViewById(R.id.timer_long_distance_total);
@@ -108,12 +110,16 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
         btnMinusUpper = (Button) findViewById(R.id.button_minus_upper);
         btnPlusUpper = (Button) findViewById(R.id.button_plus_upper);
         btnTimer = (Button) findViewById(R.id.button_timer_long_distance);
+        btnFinish = (Button) findViewById(R.id.button_timer_stop);
 
         btnMinusLower.setOnClickListener(this);
         btnPlusLower.setOnClickListener(this);
         btnMinusUpper.setOnClickListener(this);
         btnPlusUpper.setOnClickListener(this);
         btnTimer.setOnClickListener(this);
+        btnFinish.setOnClickListener(this);
+
+        tone = new ToneGenerator(AudioManager.STREAM_ALARM,ToneGenerator.MAX_VOLUME);
 
         tvSpeedThresholdLower = (TextView) findViewById(R.id.textView_speed_threshold_lower);
         tvSpeedThresholdLower.addTextChangedListener(new TextWatcher() {
@@ -168,7 +174,6 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
         runningTimer = new Timer(this, R.id.timer_long_distance_running);
         walkingTimer = new Timer(this, R.id.timer_long_distance_walking);
 
-
         // GOOGLE API
         // Get a receiver for broadcasts from ActivityDetectionIntentService.
         startTimeGoogle = SystemClock.uptimeMillis();
@@ -205,8 +210,10 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
         tvAccuracy.setText("Accuracy: " + location.getAccuracy());
         if(speed < speedThresholdLower){
             tvCurrentSpeed.setText("Current speed: " + speed + "TOO SLOW");
+            tone.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 1000);
         } else if (speed > speedThresholdUpper){
             tvCurrentSpeed.setText("Current speed: " + speed + "TOO FAST");
+            tone.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 100);
         } else{
             tvCurrentSpeed.setText("Current speed: " + speed);
         }
@@ -264,16 +271,30 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
             if(timerOn){ //Wants to pause timer
                 timerOn = false;
                 totalTimer.pause();
+                runningTimer.pause();
+                walkingTimer.pause();
+                LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
                 btnTimer.setText("Start");
             }
             else{
                 timerOn = true;
                 totalTimer.start();
+                LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, new IntentFilter(Constants.BROADCAST_ACTION));
                 btnTimer.setText("Pause");
             }
         }
+        else if(v.getId() == R.id.button_timer_stop){
+            totalTimer.finish();
+            runningTimer.finish();
+            walkingTimer.finish();
+            timerWalkingOn = false;
+            timerRunningOn = false;
+            timerOn = false;
+            btnTimer.setText("Start");
+        }
 
-        updateThresholdText();
+
+            updateThresholdText();
     }
 
     public void updateThresholdText(){
@@ -315,7 +336,6 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
     protected void onStart() {
         super.onStart();
         mGoogleApiClient.connect();
-
     }
 
     @Override
@@ -324,7 +344,7 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
         mGoogleApiClient.disconnect();
     }
 
-    @Override
+    /*@Override
     protected void onResume() {
         super.onResume();
         // Register the broadcast receiver that informs this activity of the DetectedActivity
@@ -338,7 +358,7 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
         // Unregister the broadcast receiver that was registered during onResume().
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
         super.onPause();
-    }
+    }*/
 
     /**
      * Runs when a GoogleApiClient object successfully connects.
@@ -502,7 +522,7 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
                 runningTimer.pause();
                 timerRunningOn = false;
             }
-            if(!timerTotalOn){
+            if(!timerWalkingOn){
                 walkingTimer.start();
             }
             timerWalkingOn = true;
