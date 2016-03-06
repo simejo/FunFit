@@ -80,7 +80,6 @@ public class IntervalLinear extends AppCompatActivity implements SensorEventList
         // create a new ListView, set the adapter and item click listener
         resultsList.setAdapter(adapter);
 
-
     }
 
     // Timer

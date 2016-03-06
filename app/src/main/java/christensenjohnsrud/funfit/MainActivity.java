@@ -7,7 +7,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+public class MainActivity extends Activity implements View.OnClickListener{
 
     private Button btn_interval, btn_long_distance, btn_height_measurement;
 
@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             startActivity(new Intent(this, LongDistance.class));
         }
         else if(v.getId() == R.id.button_height_measurement){
-            startActivity(new Intent(this, HeightMeasurement.class));
+            startActivity(new Intent(this, measure.class));
         }
     }
 }

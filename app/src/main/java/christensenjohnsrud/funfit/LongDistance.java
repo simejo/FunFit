@@ -1,35 +1,81 @@
 package christensenjohnsrud.funfit;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
 import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.InputFilter;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
-public class LongDistance extends AppCompatActivity implements LocationListener, View.OnClickListener{
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.ActivityRecognition;
+import com.google.android.gms.location.DetectedActivity;
+
+import java.util.ArrayList;
+
+public class LongDistance extends Activity implements LocationListener, View.OnClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status>{
 
     LocationManager locationManager;
-    TextView tvCurrentSpeed, tvSpeedThresholdLower, tvSpeedThresholdUpper, tvAccuracy, tvTimer;
-    Button btnPlusLower, btnMinusLower, btnPlusUpper, btnMinusUpper, btnTimer;
+    TextView tvCurrentSpeed, tvSpeedThresholdLower, tvSpeedThresholdUpper, tvAccuracy, tvTimer, tvCurrentActivity;
+    Button btnPlusLower, btnMinusLower, btnPlusUpper, btnMinusUpper, btnTimer, btnFinish;
     private float speedThresholdLower, speedThresholdUpper;
     private double km_h = 3.6, mph = 2.2369;
-    private Timer timer;
-    private boolean timerOn = false;
+    private Timer totalTimer, walkingTimer, runningTimer;
+
+    private boolean timerRunningOn = false, timerWalkingOn = false, timerOn = false;
+    private int GPS_request_intensity = 5000;
+
+    private ToneGenerator tone;
+
+    //Google API
+    private long startTimeGoogle;
+    private Context context;
+    /**
+     * A receiver for DetectedActivity objects broadcast by the
+     * {@code ActivityDetectionIntentService}.
+     */
+    protected ActivityDetectionBroadcastReceiver mBroadcastReceiver;
+
+    /**
+     * Provides the entry point to Google Play services.
+     */
+    protected GoogleApiClient mGoogleApiClient;
+
+    //private ListView mDetectedActivitiesListView;
+
+    /**
+     * The DetectedActivities that we track in this sample. We use this for initializing the
+     * {@code DetectedActivitiesAdapter}. We also use this for persisting state in
+     * {@code onSaveInstanceState()} and restoring it in {@code onCreate()}. This ensures that each
+     * activity is displayed with the correct confidence level upon orientation changes.
+     */
+    private ArrayList<DetectedActivity> mDetectedActivities;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,10 +98,10 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
             buildAlertMessageNoGps();
         }
 
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, GPS_request_intensity, 0, this);
         tvCurrentSpeed = (TextView) findViewById(R.id.textView_current_speed);
         tvAccuracy = (TextView) findViewById(R.id.textView_accuracy);
-        tvTimer = (TextView) findViewById(R.id.timer_long_distance);
+        tvTimer = (TextView) findViewById(R.id.timer_long_distance_total);
 
         speedThresholdLower = /*Load a value from database*/ 6.0f;
         speedThresholdUpper = /*Load a value from database*/ 9.0f;
@@ -65,12 +111,16 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
         btnMinusUpper = (Button) findViewById(R.id.button_minus_upper);
         btnPlusUpper = (Button) findViewById(R.id.button_plus_upper);
         btnTimer = (Button) findViewById(R.id.button_timer_long_distance);
+        btnFinish = (Button) findViewById(R.id.button_timer_stop);
 
         btnMinusLower.setOnClickListener(this);
         btnPlusLower.setOnClickListener(this);
         btnMinusUpper.setOnClickListener(this);
         btnPlusUpper.setOnClickListener(this);
         btnTimer.setOnClickListener(this);
+        btnFinish.setOnClickListener(this);
+
+        tone = new ToneGenerator(AudioManager.STREAM_ALARM,ToneGenerator.MAX_VOLUME);
 
         tvSpeedThresholdLower = (TextView) findViewById(R.id.textView_speed_threshold_lower);
         tvSpeedThresholdLower.addTextChangedListener(new TextWatcher() {
@@ -109,18 +159,46 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
 
             @Override
             public void afterTextChanged(Editable s) {
-                if(s.toString().equals("")){
+                if (s.toString().equals("")) {
                     speedThresholdUpper = 0;
-                }
-                else {
-                    String num = s.toString().replace(',','.');
+                } else {
+                    String num = s.toString().replace(',', '.');
                     speedThresholdUpper = Float.valueOf(num);
                 }
             }
         });
         updateThresholdText();
 
-        timer = new Timer(this, R.id.timer_long_distance);
+        tvCurrentActivity = (TextView) findViewById(R.id.text_view_current_activity);
+
+        totalTimer = new Timer(this, R.id.timer_long_distance_total);
+        runningTimer = new Timer(this, R.id.timer_long_distance_running);
+        walkingTimer = new Timer(this, R.id.timer_long_distance_walking);
+
+        // GOOGLE API
+        // Get a receiver for broadcasts from ActivityDetectionIntentService.
+        startTimeGoogle = SystemClock.uptimeMillis();
+        mBroadcastReceiver = new ActivityDetectionBroadcastReceiver();
+
+
+        // Reuse the value of mDetectedActivities from the bundle if possible. This maintains state
+        // across device orientation changes. If mDetectedActivities is not stored in the bundle,
+        // populate it with DetectedActivity objects whose confidence is set to 0. Doing this
+        // ensures that the bar graphs for only only the most recently detected activities are
+        // filled in.
+        if (savedInstanceState != null && savedInstanceState.containsKey(
+                Constants.DETECTED_ACTIVITIES)) {
+            mDetectedActivities = (ArrayList<DetectedActivity>) savedInstanceState.getSerializable(Constants.DETECTED_ACTIVITIES);
+        } else {
+            mDetectedActivities = new ArrayList<DetectedActivity>();
+            // Set the confidence level of each monitored activity to zero.
+            for (int i = 0; i < Constants.MONITORED_ACTIVITIES.length; i++) {
+                mDetectedActivities.add(new DetectedActivity(Constants.MONITORED_ACTIVITIES[i], 0));
+            }
+        }
+
+        // Kick off the request to build GoogleApiClient.
+        buildGoogleApiClient();
 
 
     }
@@ -133,8 +211,10 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
         tvAccuracy.setText("Accuracy: " + location.getAccuracy());
         if(speed < speedThresholdLower){
             tvCurrentSpeed.setText("Current speed: " + speed + "TOO SLOW");
+            tone.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 1000);
         } else if (speed > speedThresholdUpper){
             tvCurrentSpeed.setText("Current speed: " + speed + "TOO FAST");
+            tone.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 100);
         } else{
             tvCurrentSpeed.setText("Current speed: " + speed);
         }
@@ -189,27 +269,33 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
             speedThresholdUpper += 0.1;
         }
         else if(v.getId() == R.id.button_timer_long_distance){
-            if(timerOn){
+            if(timerOn){ //Wants to pause timer
                 timerOn = false;
-                timer.setStartTime(SystemClock.uptimeMillis());
-                timer.removeHandlerCallback();
-                tvTimer.setText(timer.getCurrentTime());
-                timer.postDelayed();
+                totalTimer.pause();
+                runningTimer.pause();
+                walkingTimer.pause();
+                LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
                 btnTimer.setText("Start");
             }
             else{
                 timerOn = true;
-
-                timer.setStartTime(SystemClock.uptimeMillis());
-                timer.removeHandlerCallback();
-                tvTimer.setText(timer.getCurrentTime());
-
-                timer.postDelayed();
+                totalTimer.start();
+                LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, new IntentFilter(Constants.BROADCAST_ACTION));
                 btnTimer.setText("Pause");
             }
         }
+        else if(v.getId() == R.id.button_timer_stop){
+            totalTimer.finish();
+            runningTimer.finish();
+            walkingTimer.finish();
+            timerWalkingOn = false;
+            timerRunningOn = false;
+            timerOn = false;
+            btnTimer.setText("Start");
+        }
 
-        updateThresholdText();
+
+            updateThresholdText();
     }
 
     public void updateThresholdText(){
@@ -233,5 +319,246 @@ public class LongDistance extends AppCompatActivity implements LocationListener,
                 });
         final AlertDialog alert = builder.create();
         alert.show();
+    }
+
+    /**
+     * Builds a GoogleApiClient. Uses the {@code #addApi} method to request the
+     * ActivityRecognition API.
+     */
+    protected synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(ActivityRecognition.API)
+                .build();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mGoogleApiClient.disconnect();
+    }
+
+    /*@Override
+    protected void onResume() {
+        super.onResume();
+        // Register the broadcast receiver that informs this activity of the DetectedActivity
+        // object broadcast sent by the intent service.
+        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver,
+                new IntentFilter(Constants.BROADCAST_ACTION));
+    }
+
+    @Override
+    protected void onPause() {
+        // Unregister the broadcast receiver that was registered during onResume().
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
+        super.onPause();
+    }*/
+
+    /**
+     * Runs when a GoogleApiClient object successfully connects.
+     */
+    @Override
+    public void onConnected(Bundle connectionHint) {
+        Log.i("Interval", "Connected to GoogleApiClient");
+        requestActivityUpdatesHandler();
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+        // Refer to the javadoc for ConnectionResult to see what error codes might be returned in
+        // onConnectionFailed.
+        Log.i("Interval", "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
+    }
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+        // The connection to Google Play services was lost for some reason. We call connect() to
+        // attempt to re-establish the connection.
+        Log.i("Interval", "Connection suspended");
+        mGoogleApiClient.connect();
+    }
+
+    /**
+     * Registers for activity recognition updates using
+     * {@link com.google.android.gms.location.ActivityRecognitionApi#requestActivityUpdates} which
+     * returns a {@link com.google.android.gms.common.api.PendingResult}. Since this activity
+     * implements the PendingResult interface, the activity itself receives the callback, and the
+     * code within {@code onResult} executes. Note: once {@code requestActivityUpdates()} completes
+     * successfully, the {@code DetectedActivitiesIntentService} starts receiving callbacks when
+     * activities are detected.
+     */
+    public void requestActivityUpdatesHandler() {
+        if (!mGoogleApiClient.isConnected()) {
+            Toast.makeText(this, "Not connected",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(
+                mGoogleApiClient,
+                Constants.DETECTION_INTERVAL_IN_MILLISECONDS,
+                getActivityDetectionPendingIntent()
+        ).setResultCallback(this);
+    }
+
+    /**
+     * Removes activity recognition updates using
+     * {@link com.google.android.gms.location.ActivityRecognitionApi#removeActivityUpdates} which
+     * returns a {@link com.google.android.gms.common.api.PendingResult}. Since this activity
+     * implements the PendingResult interface, the activity itself receives the callback, and the
+     * code within {@code onResult} executes. Note: once {@code removeActivityUpdates()} completes
+     * successfully, the {@code DetectedActivitiesIntentService} stops receiving callbacks about
+     * detected activities.
+     */
+    public void removeActivityUpdatesHandler() {
+        if (!mGoogleApiClient.isConnected()) {
+            Toast.makeText(this, "Not connected", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        // Remove all activity updates for the PendingIntent that was used to request activity
+        // updates.
+        ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(
+                mGoogleApiClient,
+                getActivityDetectionPendingIntent()
+        ).setResultCallback(this);
+    }
+
+    /**
+     *
+     * @param status The Status returned through a PendingIntent when requestActivityUpdates()
+     *               or removeActivityUpdates() are called.
+     */
+    public void onResult(Status status) {
+        if (status.isSuccess()) {
+            // Toggle the status of activity updates requested, and save in shared preferences.
+            boolean requestingUpdates = !getUpdatesRequestedState();
+            setUpdatesRequestedState(requestingUpdates);
+        } else {
+            Log.e("Interval", "Error adding or removing activity detection: " + status.getStatusMessage());
+        }
+    }
+
+    /**
+     * Gets a PendingIntent to be sent for each activity detection.
+     */
+    private PendingIntent getActivityDetectionPendingIntent() {
+        Intent intent = new Intent(this, DetectedActivitiesIntentService.class);
+        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
+        // requestActivityUpdates() and removeActivityUpdates().
+        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    /**
+     * Retrieves a SharedPreference object used to store or read values in this app. If a
+     * preferences file passed as the first argument to {@link #getSharedPreferences}
+     * does not exist, it is created when {@link SharedPreferences.Editor} is used to commit
+     * data.
+     */
+    private SharedPreferences getSharedPreferencesInstance() {
+        return getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, MODE_PRIVATE);
+    }
+
+    /**
+     * Retrieves the boolean from SharedPreferences that tracks whether we are requesting activity
+     * updates.
+     */
+    private boolean getUpdatesRequestedState() {
+        return getSharedPreferencesInstance()
+                .getBoolean(Constants.ACTIVITY_UPDATES_REQUESTED_KEY, false);
+    }
+
+    /**
+     * Sets the boolean in SharedPreferences that tracks whether we are requesting activity
+     * updates.
+     */
+    private void setUpdatesRequestedState(boolean requestingUpdates) {
+        getSharedPreferencesInstance()
+                .edit()
+                .putBoolean(Constants.ACTIVITY_UPDATES_REQUESTED_KEY, requestingUpdates)
+                .commit();
+    }
+
+    /**
+     * Stores the list of detected activities in the Bundle.
+     */
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putSerializable(Constants.DETECTED_ACTIVITIES, mDetectedActivities);
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+    /**
+     * Processes the list of freshly detected activities. Asks the adapter to update its list of
+     * DetectedActivities with new {@code DetectedActivity} objects reflecting the latest detected
+     * activities.
+     */
+    protected void updateDetectedActivitiesList(ArrayList<DetectedActivity> detectedActivities) {
+
+        String holder = "";
+        for(DetectedActivity da: detectedActivities){
+            holder += da.toString() + ", ";
+        }
+        tvCurrentActivity.setText(holder);
+        int currentType0 = detectedActivities.get(0).getType();
+
+        if (currentType0 == DetectedActivity.RUNNING ||
+                (currentType0 == DetectedActivity.ON_FOOT &&  detectedActivities.get(1).getType() == DetectedActivity.RUNNING)) {
+            if(!timerRunningOn){
+                runningTimer.start();
+                timerRunningOn = true;
+            }
+            if(timerWalkingOn){
+                walkingTimer.pause();
+                timerWalkingOn = false;
+            }
+        }
+        else if (currentType0 == DetectedActivity.WALKING ||
+                (currentType0 == DetectedActivity.ON_FOOT &&  detectedActivities.get(1).getType() == DetectedActivity.WALKING)) {
+            if(timerRunningOn){
+                runningTimer.pause();
+                timerRunningOn = false;
+            }
+            if(!timerWalkingOn){
+                walkingTimer.start();
+            }
+            timerWalkingOn = true;
+        }
+        else if (timerRunningOn && timerWalkingOn){
+            runningTimer.pause();
+            walkingTimer.pause();
+            timerRunningOn = false;
+            timerWalkingOn = false;
+        }
+        else if (timerRunningOn){
+            runningTimer.pause();
+            timerRunningOn = false;
+        }
+        else if (timerWalkingOn){
+            walkingTimer.pause();
+            timerWalkingOn = false;
+        }
+    }
+
+    /**
+     * Receiver for intents sent by DetectedActivitiesIntentService via a sendBroadcast().
+     * Receives a list of one or more DetectedActivity objects associated with the current state of
+     * the device.
+     */
+    public class ActivityDetectionBroadcastReceiver extends BroadcastReceiver {
+        protected static final String TAG = "activity-detection";
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ArrayList<DetectedActivity> updatedActivities =
+                    intent.getParcelableArrayListExtra(Constants.ACTIVITY_EXTRA);
+            updateDetectedActivitiesList(updatedActivities);
+            Log.i(TAG, "ActivityDetectionBroadcastReceiver");
+
+        }
     }
 }
