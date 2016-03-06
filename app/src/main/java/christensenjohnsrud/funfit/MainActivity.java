@@ -36,7 +36,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
 
         }
         else if(v.getId() == R.id.button_long_distance){
-            startActivity(new Intent(this, LongDistance.class));
+            startActivity(new Intent(this, LongDistanceTabHolder.class));
         }
         else if(v.getId() == R.id.button_height_measurement){
             startActivity(new Intent(this, HeightMeasurement.class));

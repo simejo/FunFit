@@ -34,9 +34,9 @@
         <activity android:name=".IntervalLinear" />
         <activity android:name=".HeightMeasurement" />
         <activity android:name=".RandomWorkout" />
-
         <activity android:name=".IntervalA"
             android:windowSoftInputMode="stateHidden"/>
+        <activity android:name=".LongDistanceTabHolder" />
 
         <!--
         Service that provides activity recognition data. Setting the android:exported attribute
@@ -47,6 +47,7 @@
             android:name=".DetectedActivitiesIntentService"
             android:exported="false" />
 
+        <activity android:name=".LongDistanceData"></activity>
     </application>
 
 </manifest>
