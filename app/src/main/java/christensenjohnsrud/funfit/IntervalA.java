@@ -22,7 +22,7 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
-public class IntervalA extends AppCompatActivity implements SensorEventListener, View.OnClickListener, SeekBar.OnSeekBarChangeListener {
+public class IntervalA extends Activity implements SensorEventListener, View.OnClickListener, SeekBar.OnSeekBarChangeListener {
 
 
     private String className = "IntervalA.java"; //To debug
@@ -30,10 +30,8 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
 
     // TESTING
     private float accel_threshold = 4f;
-    private Button plusThreshold, minusThreshold, plusSR, minusSR;
     private EditText accel_tv;
-    //private EditText sampleRate_tv;
-    private TextView sampleRate_tv;
+    private TextView sampleRate_tv, threshold_tv;
     private NumberPicker npSampleRate;
     private String[] sampleRateArray = {"100","200","500", "1000", "1500", "2000"};
     private int accelSampleRate;
@@ -68,8 +66,9 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
     private float maxZ = 0;
 
     // TESTNG
-    /*The idea is to collect the last seconds of acceleration data, in order to check for how long
-    * time the user may have been running but the google api did not detect it*/
+    /* The idea is to collect the last seconds of acceleration data,
+     * in order to check for how long time the user may have been running,
+     * but the google api did not detect it */
     Integer[] accelDataList;
     int accelDataListLength;
     int accel_counter = 0;
@@ -101,8 +100,10 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
 
 
         // Acceleration threshold
+        threshold_tv = (TextView) findViewById(R.id.text_view_threshold);
         seekBarThreshold = (SeekBar)findViewById(R.id.seekbar_threshold); // make seekbar object
         seekBarThreshold.setOnSeekBarChangeListener(this);
+        seekBarThreshold.setMax(7);
 
         // Acceleration sample rate
         sampleRate_tv = (TextView) findViewById(R.id.text_view_sample_rate);
@@ -256,6 +257,8 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        accel_threshold = progress + 3;
+        threshold_tv.setText("The acceleration threshold is: "+ accel_threshold);
 
     }
 
