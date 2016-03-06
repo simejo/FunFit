@@ -128,6 +128,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         //currentActivity = (TextView) findViewById(R.id.current_activity);
 
 
+
         // Reuse the value of mDetectedActivities from the bundle if possible. This maintains state
         // across device orientation changes. If mDetectedActivities is not stored in the bundle,
         // populate it with DetectedActivity objects whose confidence is set to 0. Doing this

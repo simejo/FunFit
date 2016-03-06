@@ -8,7 +8,7 @@ import android.media.MediaRecorder;
 import android.util.Log;
 //import android.os.Process;
 
-public class sonicPing {
+public class Ping {
 	AudioTrack audioTracker; 	// Manages and plays a single audio resource
 	AudioRecord audioRecorder;	// Manages the audio resources to record audio from the audio input hardware
 	static int streamType = AudioManager.STREAM_MUSIC;
@@ -49,11 +49,11 @@ public class sonicPing {
 	public int error = 0;
 	String TAG = "sonicPing.java";
 	
-	public sonicPing() {
+	public Ping() {
 		this(1, 100, 3000, 2000, 500, 10);
 	}
 	
-	public sonicPing(int msChirpLength, int msChirpPause, int HzCarrierFreq, int HzBandwidth, int msAddRecordLength, int nChirpRepeat) {
+	public Ping(int msChirpLength, int msChirpPause, int HzCarrierFreq, int HzBandwidth, int msAddRecordLength, int nChirpRepeat) {
 		Log.d(TAG, "sonicPing() (constructor)");
 		sampleRate = getMaxRate();
 		Log.d(TAG, "sampleRate = " + sampleRate);

@@ -44,6 +44,7 @@
         android:id="@+id/textView_height_measurement5" />
 
     <Button
+        style="@style/funFitButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Send Ping"
@@ -69,6 +70,8 @@
         android:layout_height="wrap_content" >
 
         <RadioButton
+            style="@style/funFitColor"
+
             android:id="@+id/radioCentimeter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -76,6 +79,8 @@
             android:checked="true" />
 
         <RadioButton
+            style="@style/funFitColor"
+
             android:id="@+id/radioInch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
