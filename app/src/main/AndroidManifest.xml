@@ -33,6 +33,8 @@
         <activity android:name=".LongDistance" />
         <activity android:name=".IntervalLinear" />
         <activity android:name=".HeightMeasurement" />
+        <activity android:name=".RandomWorkout" />
+
         <activity android:name=".IntervalA"
             android:windowSoftInputMode="stateHidden"/>
         <activity android:name=".LongDistanceTabHolder" />
