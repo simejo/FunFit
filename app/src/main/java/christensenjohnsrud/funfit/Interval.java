@@ -125,7 +125,7 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         mBroadcastReceiver = new ActivityDetectionBroadcastReceiver();
 
         //finding current activity text field
-        currentActivity = (TextView) findViewById(R.id.current_activity);
+        //currentActivity = (TextView) findViewById(R.id.current_activity);
 
 
         // Reuse the value of mDetectedActivities from the bundle if possible. This maintains state
