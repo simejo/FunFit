@@ -124,8 +124,6 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         startTimeGoogle = SystemClock.uptimeMillis();
         mBroadcastReceiver = new ActivityDetectionBroadcastReceiver();
 
-        //finding current activity text field
-        //currentActivity = (TextView) findViewById(R.id.current_activity);
 
 
 
