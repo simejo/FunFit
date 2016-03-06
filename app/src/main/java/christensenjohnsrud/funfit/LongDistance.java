@@ -346,8 +346,6 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
                 setSpeedBoundariesEnabled(false);
             }
         }
-
-
         updateThresholdText();
     }
 
