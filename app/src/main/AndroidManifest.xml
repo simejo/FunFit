@@ -50,4 +50,5 @@
         <activity android:name=".LongDistanceData"></activity>
     </application>
 
+
 </manifest>
