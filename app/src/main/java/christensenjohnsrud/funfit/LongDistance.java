@@ -35,6 +35,9 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.ActivityRecognition;
 import com.google.android.gms.location.DetectedActivity;
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.LineGraphSeries;
 
 import java.util.ArrayList;
 
@@ -49,6 +52,8 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
 
     private boolean timerRunningOn = false, timerWalkingOn = false, timerOn = false;
     private int GPS_request_intensity = 5000;
+
+    private ArrayList<Float> results;
 
     private ToneGenerator tone;
 
@@ -121,6 +126,7 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         btnFinish.setOnClickListener(this);
 
         tone = new ToneGenerator(AudioManager.STREAM_ALARM,ToneGenerator.MAX_VOLUME);
+        results = new ArrayList<Float>();
 
         tvSpeedThresholdLower = (TextView) findViewById(R.id.textView_speed_threshold_lower);
         tvSpeedThresholdLower.addTextChangedListener(new TextWatcher() {
@@ -218,6 +224,7 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         } else{
             tvCurrentSpeed.setText("Current speed: " + speed);
         }
+        results.add((float) speed);
     }
 
     @Override
@@ -292,10 +299,41 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
             timerRunningOn = false;
             timerOn = false;
             btnTimer.setText("Start");
+            LongDistanceData.results = results;
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            GraphView graphView = buildGraphView(results);
+            builder.setMessage("Graph").setNegativeButton("Close", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            // User cancelled the dialog
+                        }
+                    });
+            // Create the AlertDialog object and return it
+            builder.create();
+            builder.show();
+
+
+            results.clear();
+            Log.d("results length", results.size() + "");
         }
 
 
             updateThresholdText();
+    }
+
+    public DataPoint[] convertToDataPointArray(ArrayList<Float> result){
+        DataPoint[] convertedResults = new DataPoint[result.size()];
+        for(int i = 0; i < result.size(); i++){
+            convertedResults[i] = new DataPoint(i, result.get(i));
+        }
+        return convertedResults;
+    }
+
+    public GraphView buildGraphView(ArrayList<Float> result){
+        GraphView graph = new GraphView(this);
+        LineGraphSeries<DataPoint> series = new LineGraphSeries<DataPoint>(convertToDataPointArray(result));
+        graph.addSeries(series);
+        return graph;
     }
 
     public void updateThresholdText(){
