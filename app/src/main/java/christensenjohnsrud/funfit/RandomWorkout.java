@@ -1,9 +1,11 @@
 package christensenjohnsrud.funfit;
 
 import android.app.Activity;
+import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.NumberPicker;
@@ -17,15 +19,20 @@ import java.util.Random;
 public class RandomWorkout extends Activity implements SensorEventListener {
 
     private String className = "RandomWorkout";
-    private static int SHAKE_THRESHOLD = 16;
+    private static int SHAKE_THRESHOLD = 18;
+    private SensorManager sensorManager;
+    private Sensor accelerometerSensor;
+
+
 
     // NB! Remember to update all the lists
-    private String[] core = {"Planken i 1 min","Saks i 1 min","60 sit ups"};
-    private String[] booty = {"20 Lunges","20 Squat"};
-    private String[] arms = {"Weight","Lift"};
-    private String[] back = {"rygghev","mark"};
+    private String[] core = {"Plank for 1 minunte","Scissor for 1 min","60 sit ups"};
+    private String[] booty = {"20 Lunges","20 Squat", "12 burpees"};
+    private String[] arms = {"Biceps curl","Lift weight", "Max pull-ups"};
+    private String[] back = {"12 Back lifts","6 dead lifts", "6 hang-ups", "Dying whale for 1 min", "Dying fish for 1 min"};
+
     private String[][] types = {core,booty, arms, back};            // Needed for acceleration
-    private String[] np_types = {"core","booty", "arms", "back"};   // needed for numberpicker
+    private String[] np_types = {"core","booty", "arms", "back"};   // Needed for numberPicker
 
     private int chosenType;
 
@@ -38,13 +45,18 @@ public class RandomWorkout extends Activity implements SensorEventListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_random_workout);
 
+        // Setting up accelerometer sensor
+        sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        sensorManager.registerListener(this, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
+
+        // Help variable
         chosenType = 1;
 
         // NumberPicker
         type_picker = (NumberPicker) findViewById(R.id.type_picker);
-        type_picker.setMinValue(0); //from array first value
-        //Specify the maximum value/number of NumberPicker
-        type_picker.setMaxValue(types.length - 1); //to array last value
+        type_picker.setMinValue(0);                 // From array first value
+        type_picker.setMaxValue(types.length - 1);  // To array last value
         type_picker.setWrapSelectorWheel(true);
         type_picker.setDisplayedValues(np_types);
 
@@ -54,8 +66,6 @@ public class RandomWorkout extends Activity implements SensorEventListener {
         type_picker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
-                // TODO Auto-generated method stub
-                Log.i("main", newVal + "");
                 switch (newVal) {
                     case 1:
                         exercise_tv.setText(getRandomWorkout(core));
@@ -93,7 +103,8 @@ public class RandomWorkout extends Activity implements SensorEventListener {
         float axisY = event.values[1];
         float axisZ = event.values[2];
         if (axisX >= SHAKE_THRESHOLD || axisY >= SHAKE_THRESHOLD || axisZ >= SHAKE_THRESHOLD){
-            getRandomWorkout(types[chosenType]);
+            String[] exerciseList = types[chosenType];
+            exercise_tv.setText(getRandomWorkout(exerciseList));
         }
     }
 
