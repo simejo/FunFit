@@ -15,12 +15,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.NumberPicker;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 
 import java.util.ArrayList;
 
-public class IntervalA extends AppCompatActivity implements SensorEventListener, View.OnClickListener {
+public class IntervalA extends AppCompatActivity implements SensorEventListener, View.OnClickListener, SeekBar.OnSeekBarChangeListener {
 
     private String className = "IntervalA.java"; //To debug
 
@@ -34,6 +35,7 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
     private NumberPicker npSampleRate;
     private String[] sampleRateArray = {"500", "1000", "1500", "2000"};
     private int accelSampleRate;
+    private SeekBar seekBarThreshold;
 
     // SENSOR
     private SensorManager sensorManager;
@@ -97,48 +99,16 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
         // create a new ListView, set the adapter and item click listener
         resultsList.setAdapter(adapter);
 
-        // HELP BUTTONS
-        startButton = (Button) findViewById(R.id.start_button);
-        startButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                startTime = SystemClock.uptimeMillis();
-                Log.i(className, "starttime " + startTime);
-                //handlerCheck.removeCallbacks(updateTimeTask);
-                //handlerCheck.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
-                String currentIntervalDuration = timerValue.getText().toString();
-                currentResults.add(new IntervalItem(intervalItemId, null, currentIntervalDuration));
-            }
-        });
 
-        pauseButton = (Button) findViewById(R.id.pause_button);
-        pauseButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                //handlerCheck.removeCallbacks(updateTimeTask);
-                blockedCheck = true;
-            }
-        });
 
 
         // Acceleration threshold
-        /*
-        plusThreshold = (Button) findViewById(R.id.button_plus2);
-        minusThreshold = (Button) findViewById(R.id.button_minus2);
-        plusThreshold.setOnClickListener(this);
-        minusThreshold.setOnClickListener(this);
-        accel_tv = (EditText) findViewById(R.id.textView_speed_threshold2);
-        */
+        seekBarThreshold = (SeekBar)findViewById(R.id.seekbar_threshold); // make seekbar object
+        seekBarThreshold.setOnSeekBarChangeListener(this);
 
         // Acceleration sample rate
         sampleRate_tv = (TextView) findViewById(R.id.text_view_sample_rate);
         accelSampleRate = 500;
-
-        //      Buttons and textView
-        /*plusSR = (Button) findViewById(R.id.button_plus3);
-        minusSR = (Button) findViewById(R.id.button_minus3);
-        plusSR.setOnClickListener(this);
-        minusSR.setOnClickListener(this);*/
-
-        //      NumberPicker
         npSampleRate = (NumberPicker) findViewById(R.id.np_sample_rate);
         npSampleRate.setMinValue(0); //from array first value
         //Specify the maximum value/number of NumberPicker
@@ -146,7 +116,6 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
         npSampleRate.setWrapSelectorWheel(true);
         npSampleRate.setDisplayedValues(sampleRateArray);
         npSampleRate.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
-
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
                 // TODO Auto-generated method stub
@@ -268,22 +237,7 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
 
     @Override
     public void onClick(View v) {
-        /*
-        if(v.getId() == R.id.button_plus2){
-            accel_threshold++;
-            accel_tv.setText(accel_threshold + "");
-        }
-        else if(v.getId() == R.id.button_minus2){
-            accel_threshold--;
-            accel_tv.setText(accel_threshold + "");
-        }
-        if(v.getId() == R.id.button_plus3){
 
-        }
-        else if(v.getId() == R.id.button_minus3){
-
-        }
-        */
     }
 
     public int getMax(int x, int y, int z){
@@ -305,5 +259,18 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
     }
 
 
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+
+    }
 }
