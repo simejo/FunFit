@@ -56,6 +56,9 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
     private ArrayList<Float> results;
 
     private ToneGenerator tone;
+    public static ArrayList<DataPoint[]> resultList;
+    public static ArrayList<Integer> resultKeys;
+    public int resultCounter = 0;
 
     //Google API
     private long startTimeGoogle;
@@ -127,6 +130,8 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
 
         tone = new ToneGenerator(AudioManager.STREAM_ALARM,ToneGenerator.MAX_VOLUME);
         results = new ArrayList<Float>();
+        resultList = new ArrayList<DataPoint[]>();
+        resultKeys = new ArrayList<Integer>();
 
         tvSpeedThresholdLower = (TextView) findViewById(R.id.textView_speed_threshold_lower);
         tvSpeedThresholdLower.addTextChangedListener(new TextWatcher() {
@@ -299,23 +304,27 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
             timerRunningOn = false;
             timerOn = false;
             btnTimer.setText("Start");
-            LongDistanceData.results = results;
-
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            GraphView graphView = buildGraphView(results);
-            builder.setMessage("Graph").setNegativeButton("Close", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            // User cancelled the dialog
-                        }
-                    });
-            // Create the AlertDialog object and return it
-            builder.setView(buildGraphView(results));
-            builder.create();
-            builder.show();
-
+            if(results.isEmpty()){
+                //Adding test data
+                results.add(4.3f);
+                results.add(5.3f);
+                results.add(4.3f);
+                results.add(3.0f);
+                results.add(4.0f);
+                results.add(6.0f);
+                results.add(6.0f);
+                results.add(6.0f);
+                results.add(5.3f);
+            }
+            DataPoint[] convertedResults = convertToDataPointArray(results);
+            if(resultList.equals(null)){
+                resultList = new ArrayList<DataPoint[]>();
+            }
+            resultList.add(convertedResults);
+            resultKeys.add(resultCounter);
+            resultCounter++;
 
             results.clear();
-            Log.d("results length", results.size() + "");
         }
 
 
@@ -328,13 +337,6 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
             convertedResults[i] = new DataPoint(i, result.get(i));
         }
         return convertedResults;
-    }
-
-    public GraphView buildGraphView(ArrayList<Float> result){
-        GraphView graph = new GraphView(this);
-        LineGraphSeries<DataPoint> series = new LineGraphSeries<DataPoint>(convertToDataPointArray(result));
-        graph.addSeries(series);
-        return graph;
     }
 
     public void updateThresholdText(){

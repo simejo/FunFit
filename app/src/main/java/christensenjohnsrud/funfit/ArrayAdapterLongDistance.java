@@ -13,12 +13,12 @@ import java.util.ArrayList;
 /**
  * Created by simen on 3/5/16.
  */
-public class ArrayAdapterLongDistance extends ArrayAdapter<Float> {
+public class ArrayAdapterLongDistance extends ArrayAdapter<Integer> {
     Context mContext;
     int layoutResourceId;
-    ArrayList<Float> data = null;
+    ArrayList<Integer> data = null;
 
-    public ArrayAdapterLongDistance(Context mContext, int layoutResourceId, ArrayList<Float> data) {
+    public ArrayAdapterLongDistance(Context mContext, int layoutResourceId, ArrayList<Integer> data) {
 
         super(mContext, layoutResourceId, data);
 
@@ -42,7 +42,7 @@ public class ArrayAdapterLongDistance extends ArrayAdapter<Float> {
         }
 
         // object item based on the position
-        Float result = data.get(position);
+        Integer result = data.get(position);
 
         // get the TextView and then set the text (item name) and tag (item ID) values
         TextView textViewItem = (TextView) convertView.findViewById(R.id.textViewItem);
