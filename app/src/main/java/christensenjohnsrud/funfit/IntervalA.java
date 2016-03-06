@@ -1,5 +1,6 @@
 package christensenjohnsrud.funfit;
 
+import android.app.Activity;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -19,7 +20,7 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
-public class IntervalA extends AppCompatActivity implements SensorEventListener, View.OnClickListener {
+public class IntervalA extends Activity implements SensorEventListener, View.OnClickListener {
 
     private String className = "IntervalA.java"; //To debug
 

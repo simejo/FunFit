@@ -9,8 +9,8 @@ import android.util.Log;
 //import android.os.Process;
 
 public class sonicPing {
-	AudioTrack audioTracker;
-	AudioRecord audioRecorder;
+	AudioTrack audioTracker; 	// Manages and plays a single audio resource
+	AudioRecord audioRecorder;	// Manages the audio resources to record audio from the audio input hardware
 	static int streamType = AudioManager.STREAM_MUSIC;
 	static int sampleRate = AudioTrack.getNativeOutputSampleRate(streamType);
 
@@ -123,15 +123,22 @@ public class sonicPing {
 	// Creates a chirp, a fast frequency sweep from 1000 Hz to 5000 Hz
 	private void buildChirp(short[] buffer, short[] chirp_sequence) {
 		Log.d(TAG, "buildChirp()");
+
 		for (int i = 0; i < bufferChirpSize; i++) {
-			//create a sine with sweeping frequency: sin(2 Pi f(t) * t)
-			//The sweep goes from the (carrier - bandwidth/2) to (carrier + bandwidth/2): f(t) = carrierFreq + bandwidth*(t/T-0.5)
-			//Finally T = bufferChirpSize / sampleRate
-			//and t = i / sampleRate
-			//The sine is then scaled to the size of "short" and stored in the buffer
-			double A = (carrierFreq + bandwidth*((i/(double) bufferChirpSize)*0.5 -0.5))*i/(double) sampleRate;
-			buffer[i] = (short)(Short.MAX_VALUE * Math.sin(2*Math.PI*A));
+
+			// Create a sine with sweeping frequency: sin(2 Pi f(t) * t)
+			// Wiki: sin( 2*Pi ( f0*t + (k/2)*t^2) )
+			// The sweep goes from the (carrier - bandwidth/2) to (carrier + bandwidth/2): f(t) = carrierFreq + bandwidth*(t/T-0.5)
+			// Finally T = bufferChirpSize / sampleRate
+			// and t = i / sampleRate
+			// The sine is then scaled to the size of "short" and stored in the buffer
+			// Short does not have decimals, that is why we need to multiply the linear chirp with Short.MAX_VALUE
+
+			buffer[i] = (short)(Short.MAX_VALUE * Math.sin(2*Math.PI*(carrierFreq + bandwidth*(i*0.5/(double) bufferChirpSize -0.5))*i/(double) sampleRate));
+
 		}
+
+		// Adding the chirp data in the chirp_sequence
 		for (int i = 0; i < bufferChirpSequenceSize; i++) {
 			if ((i % chirpSequencePeriod) < bufferChirpSize)
 				chirp_sequence[i] = buffer[i% chirpSequencePeriod];
@@ -146,8 +153,10 @@ public class sonicPing {
 		startRecording();
 		stopRecording();
 
-		// Finding first echo and averaging periods
-		averagePeriod(recordingBuffer, findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize), periodBuffer, chirpSequencePeriod);
+		// Finding first echo
+		int start = findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize);
+		// Finding averaging periods
+		amplifyEchoes(recordingBuffer, start, periodBuffer, chirpSequencePeriod);
 		// Calculating cross-correlation
 		crossCorrelate(periodBuffer, chirp, result, bufferChirpSize, bufferResultSize);
 		// Applying Gaussian filter
@@ -180,7 +189,8 @@ public class sonicPing {
 		Log.d(TAG, "getDistanceList()");
 		return distanceList;
 	}
-	
+
+	// 	crossCorrelate(periodBuffer, chirp, result, bufferChirpSize, bufferResultSize);
 	private void crossCorrelate(float[] f, short[] g, float[] res, int gSize, int resSize) { //res has to be of the size fSize-gSize+1 > 0, returns the max of the cross-correlation
 		//		 crossCorrelate(periodBuffer, chirp, result, bufferChirpSize, bufferResultSize);
 		Log.d(TAG, "crossCorrelate()");
@@ -193,36 +203,37 @@ public class sonicPing {
 			}
 		}
 	}
-	
-	private void averagePeriod(short[] rec, int zero, float[] pB, int sPeriod) {
-		//		 averagePeriod(recordingBuffer, findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize), periodBuffer, chirpSequencePeriod);
 
+
+	private void amplifyEchoes(short[] rec, int zero, float[] pB, int sPeriod) {
 		Log.d(TAG, zero+"");
-		Log.d(TAG, "averagePeriod()");
+		Log.d(TAG, "amplifyEchoes()");
 		for (int i = 0; i < sPeriod; i++) {
 			pB[i] = 0.f;
 			for (int j = 0; j < chirpRepeat; j++)
 				pB[i] += rec[zero+i+j*sPeriod];
 		}
 	}
-	
+
+	// Finding highest recording value
+	// findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize)
 	private int findBeginning(short[] rec, short[] chirp, int limit, int bSize) {
 		//		findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize)
 		Log.d(TAG, "findBeginning()");
 		float max = 0.f;
 		float temp;
-		int i = 0;
-		for (int T = 0; T < limit; T++) {
+		int startIndex = 0;
+		for (int start = 0; start < limit; start++) {
 			temp = 0.f;
-			for (int t = 0; t < bSize; t++) {
-				temp += rec[t+T]*chirp[t];
+			for (int i = 0; i < bSize; i++) {
+				temp += rec[start+i]*chirp[i];
 			}
 			if (Math.abs(temp) > max) {
 				max = Math.abs(temp);
-				i = T;
+				startIndex = start;
 			}
 		}
-		return i;
+		return startIndex;
 	}
 
 	// Removing noise
