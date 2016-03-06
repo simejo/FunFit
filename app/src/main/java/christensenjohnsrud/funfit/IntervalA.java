@@ -14,6 +14,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.NumberPicker;
 import android.widget.TextView;
 
 
@@ -24,18 +25,21 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
     private String className = "IntervalA.java"; //To debug
 
 
-    //BUGGING
+    // TESTING
     private float accel_threshold = 6f;
-    private long startTimeGoogle;
-    private Button plus, minus;
+    private Button plusThreshold, minusThreshold, plusSR, minusSR;
     private EditText accel_tv;
+    //private EditText sampleRate_tv;
+    private TextView sampleRate_tv;
+    private NumberPicker npSampleRate;
+    private String[] sampleRateArray = {"500", "1000", "1500", "2000"};
+    private int accelSampleRate;
 
     // SENSOR
     private SensorManager sensorManager;
     private Sensor sensor;
     //TODO: Find appropriate default values
-    private Float startThreshold = 14f;
-    private Float stopThreshold = 11f;
+
     private float[] gravity = new float[3];
 
     // TIMER
@@ -115,22 +119,50 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
         });
 
 
-        plus = (Button) findViewById(R.id.button_plus2);
-        minus = (Button) findViewById(R.id.button_minus2);
+        // Acceleration threshold
+        /*
+        plusThreshold = (Button) findViewById(R.id.button_plus2);
+        minusThreshold = (Button) findViewById(R.id.button_minus2);
+        plusThreshold.setOnClickListener(this);
+        minusThreshold.setOnClickListener(this);
         accel_tv = (EditText) findViewById(R.id.textView_speed_threshold2);
+        */
 
-        plus.setOnClickListener(this);
-        minus.setOnClickListener(this);
+        // Acceleration sample rate
+        sampleRate_tv = (TextView) findViewById(R.id.text_view_sample_rate);
+        accelSampleRate = 500;
+
+        //      Buttons and textView
+        /*plusSR = (Button) findViewById(R.id.button_plus3);
+        minusSR = (Button) findViewById(R.id.button_minus3);
+        plusSR.setOnClickListener(this);
+        minusSR.setOnClickListener(this);*/
+
+        //      NumberPicker
+        npSampleRate = (NumberPicker) findViewById(R.id.np_sample_rate);
+        npSampleRate.setMinValue(0); //from array first value
+        //Specify the maximum value/number of NumberPicker
+        npSampleRate.setMaxValue(sampleRateArray.length - 1); //to array last value
+        npSampleRate.setWrapSelectorWheel(true);
+        npSampleRate.setDisplayedValues(sampleRateArray);
+        npSampleRate.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                // TODO Auto-generated method stub
+                sampleRate_tv.setText("Acceleration sample rate is " + sampleRateArray[newVal] + "ms");
+                accelSampleRate = (int) Integer.parseInt(sampleRateArray[newVal]);
+            }
+        });
+
+
         accelDataList = new Integer[]{0,0,0,0,0};
         accelDataListLength = accelDataList.length;
     }
 
-
     @Override
     public void onSensorChanged(SensorEvent event) {
         // http://developer.android.com/guide/topics/sensors/sensors_motion.html
-        startThreshold = accel_threshold;
-        stopThreshold = accel_threshold;
 
         final float alpha = 0.8f;
 
@@ -140,8 +172,6 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
         gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
 
         // Remove the gravity contribution with the high-pass filter.
-
-        //Log.i(className, "x: " + (int) (event.values[0] - gravity[0]) + " y: " + (int) (event.values[1] - gravity[1]) + " z: " + (int) (event.values[2] - gravity[2]));
         float axisX = Math.abs(event.values[0] - gravity[0]);
         float axisY = Math.abs(event.values[1] - gravity[1]);
         float axisZ = Math.abs(event.values[2] - gravity[2]);
@@ -222,7 +252,7 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
             public void run() {
                 blockedCheck = false;
             }
-        }, 1000);
+        }, accelSampleRate); // Possibility to change this. {500, 1000, 1500, 2000} ms
 
     }
     private void blockTimerRunPause(){
@@ -234,19 +264,26 @@ public class IntervalA extends AppCompatActivity implements SensorEventListener,
                 blockedRunPause = false;
             }
         }, 6000);
-
     }
 
     @Override
     public void onClick(View v) {
+        /*
         if(v.getId() == R.id.button_plus2){
-                accel_threshold++;
-                accel_tv.setText(accel_threshold + "");
+            accel_threshold++;
+            accel_tv.setText(accel_threshold + "");
         }
         else if(v.getId() == R.id.button_minus2){
-                accel_threshold--;
-                accel_tv.setText(accel_threshold + "");
+            accel_threshold--;
+            accel_tv.setText(accel_threshold + "");
         }
+        if(v.getId() == R.id.button_plus3){
+
+        }
+        else if(v.getId() == R.id.button_minus3){
+
+        }
+        */
     }
 
     public int getMax(int x, int y, int z){
