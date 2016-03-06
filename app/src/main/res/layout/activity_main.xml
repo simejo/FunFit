@@ -7,13 +7,17 @@
     tools:context="christensenjohnsrud.funfit.MainActivity">
 
     <Button
+        android:style="@style/ButtonAppThemeMain"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/interval"
         android:id="@+id/button_interval"
-        android:layout_gravity="center_horizontal" />
+        android:layout_gravity="center_horizontal"
+
+        />
 
     <Button
+        android:style="@style/ButtonAppThemeMain"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/long_distance"
@@ -21,6 +25,7 @@
         android:layout_gravity="center_horizontal" />
 
     <Button
+        android:style="@style/ButtonAppThemeMain"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/height_measurement"
@@ -28,6 +33,7 @@
         android:layout_gravity="center_horizontal" />
 
     <Button
+        android:style="@style/ButtonAppThemeMain"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/random_workout"
@@ -35,6 +41,7 @@
         android:layout_gravity="center_horizontal" />
 
     <Button
+        android:style="@style/ButtonAppThemeMain"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/user_data"

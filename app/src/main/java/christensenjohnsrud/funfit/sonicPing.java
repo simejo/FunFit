@@ -6,13 +6,11 @@ import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.util.Log;
-
-import java.math.BigDecimal;
 //import android.os.Process;
 
 public class sonicPing {
-	AudioTrack audioTracker;
-	AudioRecord audioRecorder;
+	AudioTrack audioTracker; 	// Manages and plays a single audio resource
+	AudioRecord audioRecorder;	// Manages the audio resources to record audio from the audio input hardware
 	static int streamType = AudioManager.STREAM_MUSIC;
 	static int sampleRate = AudioTrack.getNativeOutputSampleRate(streamType);
 
@@ -153,8 +151,10 @@ public class sonicPing {
 		startRecording();
 		stopRecording();
 
-		// Finding first echo and averaging periods
-		averagePeriod(recordingBuffer, findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize), periodBuffer, chirpSequencePeriod);
+		// Finding first echo
+		int start = findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize);
+		// Finding averaging periods
+		amplifyEchoes(recordingBuffer, start, periodBuffer, chirpSequencePeriod);
 		// Calculating cross-correlation
 		crossCorrelate(periodBuffer, chirp, result, bufferChirpSize, bufferResultSize);
 		// Applying Gaussian filter
@@ -187,7 +187,8 @@ public class sonicPing {
 		Log.d(TAG, "getDistanceList()");
 		return distanceList;
 	}
-	
+
+	// 	crossCorrelate(periodBuffer, chirp, result, bufferChirpSize, bufferResultSize);
 	private void crossCorrelate(float[] f, short[] g, float[] res, int gSize, int resSize) { //res has to be of the size fSize-gSize+1 > 0, returns the max of the cross-correlation
 		Log.d(TAG, "crossCorrelate()");
 		for (int T = 0; T < resSize; T++) {
@@ -199,33 +200,36 @@ public class sonicPing {
 			}
 		}
 	}
-	
-	private void averagePeriod(short[] rec, int zero, float[] pB, int sPeriod) {
+
+	// 	amplifyEchoes(recordingBuffer, findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize), periodBuffer, chirpSequencePeriod);
+	private void amplifyEchoes(short[] rec, int zero, float[] pB, int sPeriod) {
 		Log.d(TAG, zero+"");
-		Log.d(TAG, "averagePeriod()");
+		Log.d(TAG, "amplifyEchoes()");
 		for (int i = 0; i < sPeriod; i++) {
 			pB[i] = 0.f;
 			for (int j = 0; j < chirpRepeat; j++)
 				pB[i] += rec[zero+i+j*sPeriod];
 		}
 	}
-	
+
+	// Finding highest recording value
+	// findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize)
 	private int findBeginning(short[] rec, short[] chirp, int limit, int bSize) {
 		Log.d(TAG, "findBeginning()");
 		float max = 0.f;
 		float temp;
-		int i = 0;
-		for (int T = 0; T < limit; T++) {
+		int startIndex = 0;
+		for (int start = 0; start < limit; start++) {
 			temp = 0.f;
-			for (int t = 0; t < bSize; t++) {
-				temp += rec[t+T]*chirp[t];
+			for (int i = 0; i < bSize; i++) {
+				temp += rec[start+i]*chirp[i];
 			}
 			if (Math.abs(temp) > max) {
 				max = Math.abs(temp);
-				i = T;
+				startIndex = start;
 			}
 		}
-		return i;
+		return startIndex;
 	}
 
 	// Removing noise
