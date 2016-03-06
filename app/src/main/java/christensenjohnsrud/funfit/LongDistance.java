@@ -26,6 +26,7 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -44,8 +45,9 @@ import java.util.ArrayList;
 public class LongDistance extends Activity implements LocationListener, View.OnClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status>{
 
     LocationManager locationManager;
-    TextView tvCurrentSpeed, tvSpeedThresholdLower, tvSpeedThresholdUpper, tvAccuracy, tvTimer, tvCurrentActivity;
+    TextView tvCurrentSpeed, tvSpeedThresholdLower, tvSpeedThresholdUpper, tvAccuracy, tvTimer, tvCurrentActivity, tvUpper, tvLower;
     Button btnPlusLower, btnMinusLower, btnPlusUpper, btnMinusUpper, btnTimer, btnFinish;
+    CheckBox cbSpeedBoundaries;
     private float speedThresholdLower, speedThresholdUpper;
     private double km_h = 3.6, mph = 2.2369;
     private Timer totalTimer, walkingTimer, runningTimer;
@@ -54,6 +56,7 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
     private int GPS_request_intensity = 5000;
 
     private ArrayList<Float> results;
+    private Boolean speedBoundariesEnabled;
 
     private ToneGenerator tone;
     public static ArrayList<DataPoint[]> resultList;
@@ -91,25 +94,11 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         setContentView(R.layout.activity_long_distance);
 
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Log.i("INSIDE IF", "_----------__--_-_-_");
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        if ( !locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
-            buildAlertMessageNoGps();
-        }
-
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, GPS_request_intensity, 0, this);
         tvCurrentSpeed = (TextView) findViewById(R.id.textView_current_speed);
         tvAccuracy = (TextView) findViewById(R.id.textView_accuracy);
         tvTimer = (TextView) findViewById(R.id.timer_long_distance_total);
+        tvUpper = (TextView) findViewById(R.id.textViewUpperBound);
+        tvLower = (TextView) findViewById(R.id.textViewLowerBound);
 
         speedThresholdLower = /*Load a value from database*/ 6.0f;
         speedThresholdUpper = /*Load a value from database*/ 9.0f;
@@ -180,6 +169,11 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         });
         updateThresholdText();
 
+        cbSpeedBoundaries = (CheckBox) findViewById(R.id.checkBox_speed_boundaries);
+        cbSpeedBoundaries.setChecked(true);
+        setSpeedBoundariesEnabled(true);
+        cbSpeedBoundaries.setOnClickListener(this);
+
         tvCurrentActivity = (TextView) findViewById(R.id.text_view_current_activity);
 
         totalTimer = new Timer(this, R.id.timer_long_distance_total);
@@ -222,10 +216,14 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         tvAccuracy.setText("Accuracy: " + location.getAccuracy());
         if(speed < speedThresholdLower){
             tvCurrentSpeed.setText("Current speed: " + speed + "TOO SLOW");
-            tone.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 1000);
+            if(speedBoundariesEnabled){
+                tone.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 1000);
+            }
         } else if (speed > speedThresholdUpper){
             tvCurrentSpeed.setText("Current speed: " + speed + "TOO FAST");
-            tone.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 100);
+            if(speedBoundariesEnabled){
+                tone.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 100);
+            }
         } else{
             tvCurrentSpeed.setText("Current speed: " + speed);
         }
@@ -288,12 +286,28 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
                 walkingTimer.pause();
                 LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
                 btnTimer.setText("Start");
+                locationManager.removeUpdates(this);
             }
             else{
                 timerOn = true;
                 totalTimer.start();
                 LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, new IntentFilter(Constants.BROADCAST_ACTION));
                 btnTimer.setText("Pause");
+
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                    return;
+                }
+                if ( !locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
+                    buildAlertMessageNoGps();
+                }
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, GPS_request_intensity, 0, this);
             }
         }
         else if(v.getId() == R.id.button_timer_stop){
@@ -323,12 +337,31 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
             resultList.add(convertedResults);
             resultKeys.add(resultCounter);
             resultCounter++;
-
             results.clear();
+            locationManager.removeUpdates(this);
+        } else if (v.getId() == R.id.checkBox_speed_boundaries){
+            if(cbSpeedBoundaries.isChecked()){
+                setSpeedBoundariesEnabled(true);
+            } else{
+                setSpeedBoundariesEnabled(false);
+            }
         }
 
 
-            updateThresholdText();
+        updateThresholdText();
+    }
+
+    public void setSpeedBoundariesEnabled(boolean boo){
+        speedBoundariesEnabled = boo;
+        btnMinusLower.setEnabled(boo);
+        btnMinusUpper.setEnabled(boo);
+        btnPlusLower.setEnabled(boo);
+        btnPlusUpper.setEnabled(boo);
+        tvSpeedThresholdLower.setEnabled(boo);
+        tvSpeedThresholdUpper.setEnabled(boo);
+        tvUpper.setEnabled(boo);
+        tvLower.setEnabled(boo);
+
     }
 
     public DataPoint[] convertToDataPointArray(ArrayList<Float> result){
