@@ -80,24 +80,6 @@ public class IntervalLinear extends AppCompatActivity implements SensorEventList
         // create a new ListView, set the adapter and item click listener
         resultsList.setAdapter(adapter);
 
-        // HELP BUTTONS
-        startButton = (Button) findViewById(R.id.start_button);
-        startButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                startTime = SystemClock.uptimeMillis();
-                Log.i(className, "starttime " + startTime);
-                handler.removeCallbacks(updateTimeTask);
-                handler.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
-            }
-        });
-
-        pauseButton = (Button) findViewById(R.id.pause_button);
-        pauseButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                handler.removeCallbacks(updateTimeTask);
-
-            }
-        });
     }
 
     // Timer

@@ -27,13 +27,13 @@ public class IntervalA extends Activity implements SensorEventListener, View.OnC
 
 
     // TESTING
-    private float accel_threshold = 6f;
+    private float accel_threshold = 4f;
     private Button plusThreshold, minusThreshold, plusSR, minusSR;
     private EditText accel_tv;
     //private EditText sampleRate_tv;
     private TextView sampleRate_tv;
     private NumberPicker npSampleRate;
-    private String[] sampleRateArray = {"500", "1000", "1500", "2000"};
+    private String[] sampleRateArray = {"100","200","500", "1000", "1500", "2000"};
     private int accelSampleRate;
 
     // SENSOR
@@ -44,8 +44,6 @@ public class IntervalA extends Activity implements SensorEventListener, View.OnC
     private float[] gravity = new float[3];
 
     // TIMER
-    private Button startButton;
-    private Button pauseButton;
     private TextView timerValue;
     private long startTime = 0L;
     private Timer timer;
@@ -97,26 +95,6 @@ public class IntervalA extends Activity implements SensorEventListener, View.OnC
         // Create a new ListView, set the adapter and item click listener
         resultsList.setAdapter(adapter);
 
-        // HELP BUTTONS
-        startButton = (Button) findViewById(R.id.start_button);
-        startButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                startTime = SystemClock.uptimeMillis();
-                Log.i(className, "starttime " + startTime);
-                //handlerCheck.removeCallbacks(updateTimeTask);
-                //handlerCheck.postDelayed(updateTimeTask, 10); //The runnable is started every 10ms
-                String currentIntervalDuration = timerValue.getText().toString();
-                currentResults.add(new IntervalItem(intervalItemId, null, currentIntervalDuration));
-            }
-        });
-
-        pauseButton = (Button) findViewById(R.id.pause_button);
-        pauseButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View view) {
-                //handlerCheck.removeCallbacks(updateTimeTask);
-                blockedCheck = true;
-            }
-        });
 
 
         // Acceleration threshold
@@ -150,7 +128,7 @@ public class IntervalA extends Activity implements SensorEventListener, View.OnC
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
                 // TODO Auto-generated method stub
-                sampleRate_tv.setText("Acceleration sample rate is " + sampleRateArray[newVal] + "ms");
+                sampleRate_tv.setText("Acceleration sample rate is " + sampleRateArray[newVal] + " ms");
                 accelSampleRate = (int) Integer.parseInt(sampleRateArray[newVal]);
             }
         });
@@ -241,7 +219,7 @@ public class IntervalA extends Activity implements SensorEventListener, View.OnC
             public void run() {
                 blockedCheck = false;
             }
-        }, accelSampleRate); // Possibility to change this. {500, 1000, 1500, 2000} ms
+        }, accelSampleRate); // Possibility to change this. {"100","200","500", "1000", "1500", "2000"} ms
 
     }
     private void blockTimerRunPause(){
