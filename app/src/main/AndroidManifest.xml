@@ -32,8 +32,9 @@
             android:theme="@style/AppTheme.NoActionBar" />
         <activity android:name=".LongDistance" />
         <activity android:name=".IntervalLinear" />
-        <activity android:name=".IntervalA" />
         <activity android:name=".measure" />
+        <activity android:name=".IntervalA"
+            android:windowSoftInputMode="stateHidden"/>
 
         <!--
         Service that provides activity recognition data. Setting the android:exported attribute
