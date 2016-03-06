@@ -13,10 +13,10 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         android:layout_gravity="center"
-        android:src="@drawable/funFit_logo" />
+        android:src="@drawable/funfit_logo" />
 
     <Button
-        android:style="@style/ButtonAppThemeMain"
+        style="@style/ButtonAppThemeMain"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/interval"
@@ -26,7 +26,7 @@
         />
 
     <Button
-        android:style="@style/ButtonAppThemeMain"
+        style="@style/ButtonAppThemeMain"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/long_distance"
@@ -34,7 +34,7 @@
         android:layout_gravity="center_horizontal" />
 
     <Button
-        android:style="@style/ButtonAppThemeMain"
+        style="@style/ButtonAppThemeMain"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/height_measurement"
@@ -42,7 +42,7 @@
         android:layout_gravity="center_horizontal" />
 
     <Button
-        android:style="@style/ButtonAppThemeMain"
+        style="@style/ButtonAppThemeMain"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/random_workout"
@@ -50,7 +50,7 @@
         android:layout_gravity="center_horizontal" />
 
     <Button
-        android:style="@style/ButtonAppThemeMain"
+        style="@style/ButtonAppThemeMain"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/user_data"

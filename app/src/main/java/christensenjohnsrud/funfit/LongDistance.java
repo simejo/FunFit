@@ -1,6 +1,7 @@
 package christensenjohnsrud.funfit;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -35,7 +36,7 @@ import com.google.android.gms.location.DetectedActivity;
 
 import java.util.ArrayList;
 
-public class LongDistance extends AppCompatActivity implements LocationListener, View.OnClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status>{
+public class LongDistance extends Activity implements LocationListener, View.OnClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status>{
 
     LocationManager locationManager;
     TextView tvCurrentSpeed, tvSpeedThresholdLower, tvSpeedThresholdUpper, tvAccuracy, tvTimer, tvCurrentActivity;
