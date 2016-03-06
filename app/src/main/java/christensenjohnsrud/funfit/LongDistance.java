@@ -309,6 +309,7 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
                         }
                     });
             // Create the AlertDialog object and return it
+            builder.setView(buildGraphView(results));
             builder.create();
             builder.show();
 
