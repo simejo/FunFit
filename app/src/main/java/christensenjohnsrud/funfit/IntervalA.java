@@ -16,25 +16,26 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.NumberPicker;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 
 import java.util.ArrayList;
 
-public class IntervalA extends Activity implements SensorEventListener, View.OnClickListener {
+public class IntervalA extends Activity implements SensorEventListener, View.OnClickListener, SeekBar.OnSeekBarChangeListener {
+
 
     private String className = "IntervalA.java"; //To debug
 
 
     // TESTING
     private float accel_threshold = 4f;
-    private Button plusThreshold, minusThreshold, plusSR, minusSR;
     private EditText accel_tv;
-    //private EditText sampleRate_tv;
-    private TextView sampleRate_tv;
+    private TextView sampleRate_tv, threshold_tv;
     private NumberPicker npSampleRate;
     private String[] sampleRateArray = {"100","200","500", "1000", "1500", "2000"};
     private int accelSampleRate;
+    private SeekBar seekBarThreshold;
 
     // SENSOR
     private SensorManager sensorManager;
@@ -65,8 +66,9 @@ public class IntervalA extends Activity implements SensorEventListener, View.OnC
     private float maxZ = 0;
 
     // TESTNG
-    /*The idea is to collect the last seconds of acceleration data, in order to check for how long
-    * time the user may have been running but the google api did not detect it*/
+    /* The idea is to collect the last seconds of acceleration data,
+     * in order to check for how long time the user may have been running,
+     * but the google api did not detect it */
     Integer[] accelDataList;
     int accelDataListLength;
     int accel_counter = 0;
@@ -98,25 +100,14 @@ public class IntervalA extends Activity implements SensorEventListener, View.OnC
 
 
         // Acceleration threshold
-        /*
-        plusThreshold = (Button) findViewById(R.id.button_plus2);
-        minusThreshold = (Button) findViewById(R.id.button_minus2);
-        plusThreshold.setOnClickListener(this);
-        minusThreshold.setOnClickListener(this);
-        accel_tv = (EditText) findViewById(R.id.textView_speed_threshold2);
-        */
+        threshold_tv = (TextView) findViewById(R.id.text_view_threshold);
+        seekBarThreshold = (SeekBar)findViewById(R.id.seekbar_threshold); // make seekbar object
+        seekBarThreshold.setOnSeekBarChangeListener(this);
+        seekBarThreshold.setMax(7);
 
         // Acceleration sample rate
         sampleRate_tv = (TextView) findViewById(R.id.text_view_sample_rate);
         accelSampleRate = 500;
-
-        //      Buttons and textView
-        /*plusSR = (Button) findViewById(R.id.button_plus3);
-        minusSR = (Button) findViewById(R.id.button_minus3);
-        plusSR.setOnClickListener(this);
-        minusSR.setOnClickListener(this);*/
-
-        //      NumberPicker
         npSampleRate = (NumberPicker) findViewById(R.id.np_sample_rate);
         npSampleRate.setMinValue(0); //from array first value
         //Specify the maximum value/number of NumberPicker
@@ -124,7 +115,6 @@ public class IntervalA extends Activity implements SensorEventListener, View.OnC
         npSampleRate.setWrapSelectorWheel(true);
         npSampleRate.setDisplayedValues(sampleRateArray);
         npSampleRate.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
-
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
                 // TODO Auto-generated method stub
@@ -235,22 +225,7 @@ public class IntervalA extends Activity implements SensorEventListener, View.OnC
 
     @Override
     public void onClick(View v) {
-        /*
-        if(v.getId() == R.id.button_plus2){
-            accel_threshold++;
-            accel_tv.setText(accel_threshold + "");
-        }
-        else if(v.getId() == R.id.button_minus2){
-            accel_threshold--;
-            accel_tv.setText(accel_threshold + "");
-        }
-        if(v.getId() == R.id.button_plus3){
 
-        }
-        else if(v.getId() == R.id.button_minus3){
-
-        }
-        */
     }
 
     public int getMax(int x, int y, int z){
@@ -280,5 +255,20 @@ public class IntervalA extends Activity implements SensorEventListener, View.OnC
     }
 
 
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        accel_threshold = progress + 3;
+        threshold_tv.setText("The acceleration threshold is: "+ accel_threshold);
 
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+
+    }
 }
