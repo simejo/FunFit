@@ -14,15 +14,19 @@
     </style>
 
     <!-- Buttons on main page-->
-    <style name="ButtonAppThemeMain" parent="ButtonAppThemeMain" >
+    <style name="funFitButtonMain" parent="funFitButtonMain" >
         <item name="android:width">200dp</item>
-        <item name="android:textColor">#aeddec</item>
+        <item name="android:textColor">@color/colorFunFit</item>
     </style>
 
     <!-- Buttons -->
-    <style name="ButtonAppTheme" parent="ButtonAppTheme" >
-        <item name="android:textColor">#aeddec</item>
+    <style name="funFitButton" parent="funFitButton" >
+        <item name="android:textColor">@color/colorFunFit</item>
+    </style>
 
+
+    <style name="funFitColor" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="android:radioButtonStyle">@color/colorFunFit</item>
     </style>
 
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />

@@ -32,7 +32,7 @@
             android:theme="@style/AppTheme.NoActionBar" />
         <activity android:name=".LongDistance" />
         <activity android:name=".IntervalLinear" />
-        <activity android:name=".measure" />
+        <activity android:name=".HeightMeasurement" />
         <activity android:name=".IntervalA"
             android:windowSoftInputMode="stateHidden"/>
 
