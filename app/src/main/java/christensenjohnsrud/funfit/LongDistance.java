@@ -53,7 +53,7 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
     private Timer totalTimer, walkingTimer, runningTimer;
 
     private boolean timerRunningOn = false, timerWalkingOn = false, timerOn = false;
-    private int GPS_request_intensity = 5000;
+    public static int GPS_request_intensity = 5000;
 
     private ArrayList<Float> results;
     private Boolean speedBoundariesEnabled;
@@ -329,6 +329,33 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
                 results.add(6.0f);
                 results.add(6.0f);
                 results.add(5.3f);
+                results.add(4.3f);
+                results.add(5.3f);
+                results.add(4.3f);
+                results.add(3.0f);
+                results.add(4.0f);
+                results.add(6.0f);
+                results.add(6.0f);
+                results.add(6.0f);
+                results.add(5.3f);
+                results.add(4.3f);
+                results.add(5.3f);
+                results.add(4.3f);
+                results.add(3.0f);
+                results.add(4.0f);
+                results.add(6.0f);
+                results.add(6.0f);
+                results.add(6.0f);
+                results.add(5.3f);
+                results.add(4.3f);
+                results.add(5.3f);
+                results.add(4.3f);
+                results.add(3.0f);
+                results.add(4.0f);
+                results.add(6.0f);
+                results.add(6.0f);
+                results.add(6.0f);
+                results.add(5.3f);
             }
             DataPoint[] convertedResults = convertToDataPointArray(results);
             if(resultList.equals(null)){
@@ -416,22 +443,6 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         super.onStop();
         mGoogleApiClient.disconnect();
     }
-
-    /*@Override
-    protected void onResume() {
-        super.onResume();
-        // Register the broadcast receiver that informs this activity of the DetectedActivity
-        // object broadcast sent by the intent service.
-        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver,
-                new IntentFilter(Constants.BROADCAST_ACTION));
-    }
-
-    @Override
-    protected void onPause() {
-        // Unregister the broadcast receiver that was registered during onResume().
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
-        super.onPause();
-    }*/
 
     /**
      * Runs when a GoogleApiClient object successfully connects.

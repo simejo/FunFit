@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
@@ -47,6 +48,31 @@ public class LongDistanceData extends Activity implements AdapterView.OnItemClic
 
     public GraphView buildGraphView(DataPoint[] result){
         GraphView graph = new GraphView(this);
+        graph.getViewport().setYAxisBoundsManual(true);
+        graph.getViewport().setMinY(0);
+        int max = 0;
+        for(DataPoint x : result){
+            if (x.getY() > max){
+                max = (int)x.getY() + 5;
+            }
+        }
+        graph.getViewport().setMaxY(max);
+        graph.getViewport().setScrollable(true);
+        graph.getGridLabelRenderer().setLabelFormatter(new DefaultLabelFormatter() {
+            @Override
+            public String formatLabel(double value, boolean isValueX) {
+                if (isValueX) {
+                    // show normal x values
+                    int xStepInSeconds = (int)value*LongDistance.GPS_request_intensity/1000;
+                    return super.formatLabel(xStepInSeconds, isValueX) + "sek";
+                } else {
+                    // show currency for y values
+                    return super.formatLabel(value, isValueX) + "km/t";
+                }
+            }
+        });
+
+
         LineGraphSeries<DataPoint> series = new LineGraphSeries<DataPoint>(result);
         graph.addSeries(series);
         return graph;
