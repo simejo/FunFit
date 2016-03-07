@@ -63,6 +63,8 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
     public static ArrayList<Integer> resultKeys;
     public int resultCounter = 0;
 
+    public Database db;
+
     //Google API
     private long startTimeGoogle;
     private Context context;
@@ -205,6 +207,9 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         // Kick off the request to build GoogleApiClient.
         buildGoogleApiClient();
 
+        //Build file
+        db = new Database();
+        Boolean externalStorageAvailable = db.isExternalStorageWritable();
 
     }
 
@@ -361,8 +366,16 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
             if(resultList.equals(null)){
                 resultList = new ArrayList<DataPoint[]>();
             }
-            resultList.add(convertedResults);
             resultKeys.add(resultCounter);
+
+            db.writeToSDFile("longdistance.txt", convertedResults);
+            resultList = db.readFile("longdistance.txt");
+            for(DataPoint[] x : resultList){
+                for(DataPoint y : x){
+                    Log.d("Point", y.toString());
+                }
+            }
+
             resultCounter++;
             results.clear();
             locationManager.removeUpdates(this);
