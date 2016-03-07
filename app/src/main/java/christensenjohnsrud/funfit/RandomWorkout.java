@@ -68,19 +68,19 @@ public class RandomWorkout extends Activity implements SensorEventListener {
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
                 switch (newVal) {
                     case 1:
-                        exercise_tv.setText(getRandomWorkout(core));
+                        exercise_tv.setText(R.string.shake);
                         chosenType = 1;
                         break;
                     case 2:
-                        exercise_tv.setText(getRandomWorkout(booty));
+                        exercise_tv.setText(R.string.shake);
                         chosenType = 2;
                         break;
                     case 3:
-                        exercise_tv.setText(getRandomWorkout(arms));
+                        exercise_tv.setText(R.string.shake);
                         chosenType = 3;
                         break;
                     case 4:
-                        exercise_tv.setText(getRandomWorkout(back));
+                        exercise_tv.setText(R.string.shake);
                         chosenType = 4;
                         break;
                 }

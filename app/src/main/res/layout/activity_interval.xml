@@ -12,27 +12,30 @@
     tools:context="christensenjohnsrud.funfit.Interval">
 
     <TextView
+        android:layout_margin="10dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Accel data sample rate is: "
         android:id="@+id/text_view_threshold" />
 
     <SeekBar
+        android:layout_margin="10dp"
         android:id="@+id/seekbar_threshold"
         android:layout_width="match_parent"
-        android:layout_height="60dp" />
+        android:layout_height="wrap_content" />
 
     <TextView
+        android:layout_margin="10dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Accel data sample rate is: "
         android:id="@+id/text_view_sample_rate" />
 
     <NumberPicker
+        android:layout_margin="10dp"
         android:id="@+id/np_sample_rate"
         android:layout_width="50dp"
         android:layout_height="100dp">
-
     </NumberPicker>
 
     <TextView
@@ -49,7 +52,6 @@
         android:id="@+id/list_view_interval_tracker"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
-
     </ListView>
 
 

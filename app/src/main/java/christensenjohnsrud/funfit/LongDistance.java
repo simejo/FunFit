@@ -47,8 +47,8 @@ import java.util.ArrayList;
 public class LongDistance extends Activity implements LocationListener, View.OnClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status>, com.yahoo.mobile.client.android.util.rangeseekbar.RangeSeekBar.OnRangeSeekBarChangeListener{
 
     LocationManager locationManager;
-    TextView tvCurrentSpeed, tvSpeedThresholdLower, tvSpeedThresholdUpper, tvAccuracy, tvTimer, tvCurrentActivity, tvUpper, tvLower;
-    Button btnPlusLower, btnMinusLower, btnPlusUpper, btnMinusUpper, btnTimer, btnFinish;
+    TextView tvCurrentSpeed, tvTimer, tvCurrentActivity;
+    Button btnTimer, btnFinish;
     CheckBox cbSpeedBoundaries;
     private float speedThresholdLower, speedThresholdUpper;
     private double km_h = 3.6, mph = 2.2369;
@@ -90,9 +90,8 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
     private ArrayList<DetectedActivity> mDetectedActivities;
 
     // SeekBar
-    private RangeSeekBar rsb;
-    ViewGroup seekBar_vg;
-    com.yahoo.mobile.client.android.util.rangeseekbar.RangeSeekBar seekBar_component;
+    private RangeSeekBar<Integer> rangeSeekBar;
+    LinearLayout seekBarLayout;
 
 
     @Override
@@ -102,25 +101,14 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
 
         locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         tvCurrentSpeed = (TextView) findViewById(R.id.textView_current_speed);
-        tvAccuracy = (TextView) findViewById(R.id.textView_accuracy);
         tvTimer = (TextView) findViewById(R.id.timer_long_distance_total);
-        tvUpper = (TextView) findViewById(R.id.textViewUpperBound);
-        tvLower = (TextView) findViewById(R.id.textViewLowerBound);
 
         speedThresholdLower = /*Load a value from database*/ 6.0f;
         speedThresholdUpper = /*Load a value from database*/ 9.0f;
 
-        btnMinusLower = (Button) findViewById(R.id.button_minus_lower);
-        btnPlusLower = (Button) findViewById(R.id.button_plus_lower);
-        btnMinusUpper = (Button) findViewById(R.id.button_minus_upper);
-        btnPlusUpper = (Button) findViewById(R.id.button_plus_upper);
         btnTimer = (Button) findViewById(R.id.button_timer_long_distance);
         btnFinish = (Button) findViewById(R.id.button_timer_stop);
 
-        btnMinusLower.setOnClickListener(this);
-        btnPlusLower.setOnClickListener(this);
-        btnMinusUpper.setOnClickListener(this);
-        btnPlusUpper.setOnClickListener(this);
         btnTimer.setOnClickListener(this);
         btnFinish.setOnClickListener(this);
 
@@ -129,56 +117,8 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         resultList = new ArrayList<DataPoint[]>();
         resultKeys = new ArrayList<Integer>();
 
-        tvSpeedThresholdLower = (TextView) findViewById(R.id.textView_speed_threshold_lower);
-        tvSpeedThresholdLower.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
-            }
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (s.toString().equals("")) {
-                    speedThresholdLower = 0;
-                } else {
-                    String num = s.toString().replace(',', '.');
-                    speedThresholdLower = Float.valueOf(num);
-                }
-            }
-        });
-        tvSpeedThresholdUpper = (TextView) findViewById(R.id.textView_speed_threshold_upper);
-        tvSpeedThresholdUpper.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (s.toString().equals("")) {
-                    speedThresholdUpper = 0;
-                } else {
-                    String num = s.toString().replace(',', '.');
-                    speedThresholdUpper = Float.valueOf(num);
-                }
-            }
-        });
-        updateThresholdText();
-
-        cbSpeedBoundaries = (CheckBox) findViewById(R.id.checkBox_speed_boundaries);
-        cbSpeedBoundaries.setChecked(true);
-        setSpeedBoundariesEnabled(true);
-        cbSpeedBoundaries.setOnClickListener(this);
 
         tvCurrentActivity = (TextView) findViewById(R.id.text_view_current_activity);
 
@@ -211,16 +151,30 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         // Kick off the request to build GoogleApiClient.
         buildGoogleApiClient();
 
-        // create RangeSeekBar as Integer range between 20 and 75
-        RangeSeekBar<Integer> rangeSeekBar = new RangeSeekBar<Integer>(this);
+        // RangeSeekBar
+        rangeSeekBar = new RangeSeekBar<Integer>(this);
         // Set the range
-        rangeSeekBar.setRangeValues(15, 90);
-        rangeSeekBar.setSelectedMinValue(20);
-        rangeSeekBar.setSelectedMaxValue(88);
-
+        rangeSeekBar.setRangeValues(0, 30);
+        rangeSeekBar.setSelectedMinValue(6);
+        rangeSeekBar.setSelectedMaxValue(9);
+        rangeSeekBar.setOnRangeSeekBarChangeListener(new RangeSeekBar.OnRangeSeekBarChangeListener<Integer>() {
+            @Override
+            public void onRangeSeekBarValuesChanged(RangeSeekBar<?> bar, Integer minValue, Integer maxValue) {
+                speedThresholdLower = minValue;
+                speedThresholdUpper = maxValue;
+            }
+        });
         // Add to layout
-        LinearLayout layout = (LinearLayout) findViewById(R.id.seekbar_placeholder);
-        layout.addView(rangeSeekBar);
+        seekBarLayout = (LinearLayout) findViewById(R.id.seekbar_placeholder);
+        seekBarLayout.addView(rangeSeekBar);
+
+        // Checkbox to enable speed threshold
+        cbSpeedBoundaries = (CheckBox) findViewById(R.id.checkBox_speed_boundaries);
+        cbSpeedBoundaries.setChecked(true);
+        setSpeedBoundariesEnabled(true);
+        cbSpeedBoundaries.setOnClickListener(this);
+
+
     }
 
 
@@ -231,9 +185,8 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         location.getLatitude();
         Log.i("onLocationChanged", "called");
         double speed = location.getSpeed()*km_h; //Convert from m/s to km/h
-        tvAccuracy.setText("Accuracy: " + location.getAccuracy());
         if(speed < speedThresholdLower){
-            tvCurrentSpeed.setText("Current speed: " + speed + "TOO SLOW");
+            tvCurrentSpeed.setText("Current speed: " + speed + " TOO SLOW");
             if(speedBoundariesEnabled){
                 tone.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 1000);
             }
@@ -250,53 +203,23 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-        tvAccuracy.setText("Accuracy: onStatusChange");
         Log.i("onStatusChanged", "called");
     }
 
     @Override
     public void onProviderEnabled(String provider) {
-        tvAccuracy.setText("Accuracy: onProviderEnabled");
         Log.i("onProviderEnabled", "called");
     }
 
     @Override
     public void onProviderDisabled(String provider) {
-        tvAccuracy.setText("Accuracy: onProviderDisabled");
         Log.i("onProviderDisabled", "called");
 
     }
 
     @Override
     public void onClick(View v) {
-        if(v.getId() == R.id.button_minus_lower){
-            if(speedThresholdLower > 0.1){
-                speedThresholdLower -= 0.1;
-            }
-            else{
-                speedThresholdLower = 0;
-            }
-        }
-        else if(v.getId() == R.id.button_plus_lower){
-            if(speedThresholdLower < speedThresholdUpper){
-                speedThresholdLower += 0.1;
-            }
-        }
-
-        else if(v.getId() == R.id.button_minus_upper){
-            if(speedThresholdUpper > 0.1){
-                if(speedThresholdLower < speedThresholdUpper){
-                    speedThresholdUpper -= 0.1;
-                }
-            }
-            else{
-                speedThresholdUpper = 0;
-            }
-        }
-        else if(v.getId() == R.id.button_plus_upper){
-            speedThresholdUpper += 0.1;
-        }
-        else if(v.getId() == R.id.button_timer_long_distance){
+        if(v.getId() == R.id.button_timer_long_distance){
             if(timerOn){ //Wants to pause timer
                 timerOn = false;
                 totalTimer.pause();
@@ -364,19 +287,18 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
                 setSpeedBoundariesEnabled(false);
             }
         }
-        updateThresholdText();
     }
 
     public void setSpeedBoundariesEnabled(boolean boo){
         speedBoundariesEnabled = boo;
-        btnMinusLower.setEnabled(boo);
-        btnMinusUpper.setEnabled(boo);
-        btnPlusLower.setEnabled(boo);
-        btnPlusUpper.setEnabled(boo);
-        tvSpeedThresholdLower.setEnabled(boo);
-        tvSpeedThresholdUpper.setEnabled(boo);
-        tvUpper.setEnabled(boo);
-        tvLower.setEnabled(boo);
+        rangeSeekBar.setEnabled(boo);
+        if (boo) {
+            rangeSeekBar.setAlpha(1.0f);
+        }
+        else{
+            rangeSeekBar.setAlpha(0.5f);
+        }
+
 
     }
 
@@ -388,10 +310,6 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         return convertedResults;
     }
 
-    public void updateThresholdText(){
-        tvSpeedThresholdLower.setText(String.format("%.1f", speedThresholdLower));
-        tvSpeedThresholdUpper.setText(String.format("%.1f", speedThresholdUpper));
-    }
 
     private void buildAlertMessageNoGps() {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
