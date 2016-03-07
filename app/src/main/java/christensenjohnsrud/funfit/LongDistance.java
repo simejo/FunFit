@@ -25,8 +25,10 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -42,7 +44,7 @@ import com.jjoe64.graphview.series.LineGraphSeries;
 
 import java.util.ArrayList;
 
-public class LongDistance extends Activity implements LocationListener, View.OnClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status>{
+public class LongDistance extends Activity implements LocationListener, View.OnClickListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status>, com.yahoo.mobile.client.android.util.rangeseekbar.RangeSeekBar.OnRangeSeekBarChangeListener{
 
     LocationManager locationManager;
     TextView tvCurrentSpeed, tvSpeedThresholdLower, tvSpeedThresholdUpper, tvAccuracy, tvTimer, tvCurrentActivity, tvUpper, tvLower;
@@ -87,6 +89,11 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
      */
     private ArrayList<DetectedActivity> mDetectedActivities;
 
+    // SeekBar
+    private RangeSeekBar rsb;
+    ViewGroup seekBar_vg;
+    com.yahoo.mobile.client.android.util.rangeseekbar.RangeSeekBar seekBar_component;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,7 +124,7 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         btnTimer.setOnClickListener(this);
         btnFinish.setOnClickListener(this);
 
-        tone = new ToneGenerator(AudioManager.STREAM_ALARM,ToneGenerator.MAX_VOLUME);
+        tone = new ToneGenerator(AudioManager.STREAM_ALARM, ToneGenerator.MAX_VOLUME);
         results = new ArrayList<Float>();
         resultList = new ArrayList<DataPoint[]>();
         resultKeys = new ArrayList<Integer>();
@@ -136,11 +143,10 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
 
             @Override
             public void afterTextChanged(Editable s) {
-                if(s.toString().equals("")){
+                if (s.toString().equals("")) {
                     speedThresholdLower = 0;
-                }
-                else {
-                    String num = s.toString().replace(',','.');
+                } else {
+                    String num = s.toString().replace(',', '.');
                     speedThresholdLower = Float.valueOf(num);
                 }
             }
@@ -205,8 +211,20 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         // Kick off the request to build GoogleApiClient.
         buildGoogleApiClient();
 
+        // create RangeSeekBar as Integer range between 20 and 75
+        RangeSeekBar<Integer> rangeSeekBar = new RangeSeekBar<Integer>(this);
+        // Set the range
+        rangeSeekBar.setRangeValues(15, 90);
+        rangeSeekBar.setSelectedMinValue(20);
+        rangeSeekBar.setSelectedMaxValue(88);
 
+        // Add to layout
+        LinearLayout layout = (LinearLayout) findViewById(R.id.seekbar_placeholder);
+        layout.addView(rangeSeekBar);
     }
+
+
+
 
     @Override
     public void onLocationChanged(Location location) {
@@ -616,7 +634,12 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         }
     }
 
-    /**
+    @Override
+    public void onRangeSeekBarValuesChanged(com.yahoo.mobile.client.android.util.rangeseekbar.RangeSeekBar bar, Object minValue, Object maxValue) {
+
+    }
+
+/**
      * Receiver for intents sent by DetectedActivitiesIntentService via a sendBroadcast().
      * Receives a list of one or more DetectedActivity objects associated with the current state of
      * the device.
