@@ -13,7 +13,7 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         android:layout_gravity="center"
-        android:src="@drawable/funfit_logo" />
+        android:src="@mipmap/funfit_logo_white" />
 
     <Button
         style="@style/funFitButtonMain"
