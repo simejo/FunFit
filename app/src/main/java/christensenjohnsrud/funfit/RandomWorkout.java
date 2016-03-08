@@ -23,11 +23,9 @@ public class RandomWorkout extends Activity implements SensorEventListener {
     private SensorManager sensorManager;
     private Sensor accelerometerSensor;
 
-
-
     // NB! Remember to update all the lists
     private String[] core = {"Plank for 1 minunte","Scissor for 1 min","60 sit ups"};
-    private String[] booty = {"20 Lunges","20 Squat", "12 burpees"};
+    private String[] booty = {"20 Lunges","20 Squat", "12 burpees", "5 pistol squats each leg", "10 box jumps"};
     private String[] arms = {"Biceps curl","Lift weight", "Max pull-ups"};
     private String[] back = {"12 Back lifts","6 dead lifts", "6 hang-ups", "Dying whale for 1 min", "Dying fish for 1 min"};
 
@@ -35,7 +33,6 @@ public class RandomWorkout extends Activity implements SensorEventListener {
     private String[] np_types = {"core","booty", "arms", "back"};   // Needed for numberPicker
 
     private int chosenType;
-
 
     private NumberPicker type_picker;
     private TextView exercise_tv;
@@ -107,7 +104,6 @@ public class RandomWorkout extends Activity implements SensorEventListener {
             exercise_tv.setText(getRandomWorkout(exerciseList));
         }
     }
-
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
