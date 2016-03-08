@@ -15,7 +15,7 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         android:layout_gravity="center"
-        android:src="@drawable/funfit_logo" />
+        android:src="@mipmap/funfit_logo_white" />
     <NumberPicker
         android:id="@+id/type_picker"
         android:layout_width="50dp"
