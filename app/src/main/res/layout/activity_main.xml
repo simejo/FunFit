@@ -49,6 +49,8 @@
         android:id="@+id/button_random"
         android:layout_gravity="center_horizontal" />
 
+
+    <!--
     <Button
         style="@style/funFitButtonMain"
         android:layout_width="wrap_content"
@@ -56,4 +58,5 @@
         android:text="@string/user_data"
         android:id="@+id/button_user"
         android:layout_gravity="center_horizontal" />
+        -->
 </LinearLayout>

@@ -159,7 +159,7 @@ public class IntervalA extends Activity implements SensorEventListener, View.OnC
             accel_counter = accel_counter % accelDataListLength;
 
             // Test
-            printAccelDataList();
+            //printAccelDataList();
 
             blockedCheck =true;
             blockTimerCheck();
@@ -238,7 +238,6 @@ public class IntervalA extends Activity implements SensorEventListener, View.OnC
             holder+= data;
         }
         float avg = holder/accelDataListLength;
-        Log.i(className + " AVG: ", avg + "");
         if (avg > accel_threshold){
             return true;
         }
