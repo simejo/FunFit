@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -20,6 +21,8 @@ public class LongDistanceData extends Activity implements AdapterView.OnItemClic
 
     private ListView lv_data;
     private ArrayAdapterLongDistance adapter;
+    private ArrayList<DataPoint[]> resultList;
+    private ArrayList<String> resultString;
 
 
     @Override
@@ -27,9 +30,23 @@ public class LongDistanceData extends Activity implements AdapterView.OnItemClic
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_long_distance_data);
 
+
+        //resultList = new ArrayList<DataPoint[]>();
+        resultList = LongDistance.db.readFile("longdistance.txt");
+        for(DataPoint[] x : resultList){
+            for(DataPoint y : x){
+                Log.d("Point", y.toString());
+            }
+        }
+
+        resultString = LongDistance.db.readFileKeys("longdistance.txt");
+        for (String x : resultString){
+            Log.d("datakeys", x);
+        }
+
         lv_data = (ListView) findViewById(R.id.listViewLongDistanceData);
         lv_data.setOnItemClickListener(this);
-        adapter = new ArrayAdapterLongDistance(this, R.layout.list_view_row_item, LongDistance.resultKeys);
+        adapter = new ArrayAdapterLongDistance(this, R.layout.list_view_row_item, resultString);
         lv_data.setAdapter(adapter);
     }
 

@@ -51,18 +51,47 @@ public class Database {
             FileOutputStream f = new FileOutputStream(file);
             PrintWriter pw = new PrintWriter(f);
 
-            pw.println("new"+data.length);
+            pw.println("new" + data.length);
             for(DataPoint dp : data){
                 pw.println(dp.getX() + ":" + dp.getY());
             }
             pw.flush();
             pw.close();
             f.close();
+            Log.d("Database", "Data saved");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public ArrayList<String> readFileKeys(String filename){
+        final File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/funfit", filename);
+
+        ArrayList<String> result = new ArrayList<String>();
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            String line;
+            int counter = 1;
+            String[] holder = br.readLine().split("new");
+            result.add(holder[0] + counter);
+            while ((line = br.readLine()) != null) {
+                if(line.startsWith("new")){
+                    holder = line.split("new");
+                    counter++;
+                    result.add(holder[0] + counter);
+                }
+            }
+            br.close();
+            Log.d("Database", "Data read");
+            return result;
+        }
+        catch (IOException e) {
+            //You'll need to add proper error handling here
+        }
+        return null;
     }
 
 
@@ -90,6 +119,7 @@ public class Database {
             }
             result.add(data);
             br.close();
+            Log.d("Database", "Data read");
             return result;
         }
         catch (IOException e) {

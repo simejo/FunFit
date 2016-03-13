@@ -63,7 +63,7 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
     public static ArrayList<Integer> resultKeys;
     public int resultCounter = 0;
 
-    public Database db;
+    public static Database db;
 
     //Google API
     private long startTimeGoogle;
@@ -363,20 +363,7 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
                 results.add(5.3f);
             }
             DataPoint[] convertedResults = convertToDataPointArray(results);
-            if(resultList.equals(null)){
-                resultList = new ArrayList<DataPoint[]>();
-            }
-            resultKeys.add(resultCounter);
-
             db.writeToSDFile("longdistance.txt", convertedResults);
-            resultList = db.readFile("longdistance.txt");
-            for(DataPoint[] x : resultList){
-                for(DataPoint y : x){
-                    Log.d("Point", y.toString());
-                }
-            }
-
-            resultCounter++;
             results.clear();
             locationManager.removeUpdates(this);
         } else if (v.getId() == R.id.checkBox_speed_boundaries){
