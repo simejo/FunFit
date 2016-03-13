@@ -46,7 +46,7 @@ public class ArrayAdapterLongDistance extends ArrayAdapter<Integer> {
 
         // get the TextView and then set the text (item name) and tag (item ID) values
         TextView textViewItem = (TextView) convertView.findViewById(R.id.textViewItem);
-        textViewItem.setText(result.toString());
+        textViewItem.setText("3:13:2016");
         textViewItem.setTag("Date");
 
         return convertView;
