@@ -174,7 +174,26 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         setSpeedBoundariesEnabled(true);
         cbSpeedBoundaries.setOnClickListener(this);
 
-
+        if(results.isEmpty()){
+            //Adding test data
+            results.add(4.3f);
+            results.add(5.3f);
+            results.add(4.3f);
+            results.add(3.0f);
+            results.add(4.0f);
+            results.add(6.0f);
+            results.add(6.0f);
+            results.add(6.0f);
+            results.add(5.3f);
+        }
+        DataPoint[] convertedResults = convertToDataPointArray(results);
+        if(resultList.equals(null)){
+            resultList = new ArrayList<DataPoint[]>();
+        }
+        resultList.add(convertedResults);
+        resultKeys.add(resultCounter);
+        resultCounter++;
+        results.clear();
     }
 
 
@@ -259,26 +278,7 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
             timerRunningOn = false;
             timerOn = false;
             btnTimer.setText("Start");
-            if(results.isEmpty()){
-                //Adding test data
-                results.add(4.3f);
-                results.add(5.3f);
-                results.add(4.3f);
-                results.add(3.0f);
-                results.add(4.0f);
-                results.add(6.0f);
-                results.add(6.0f);
-                results.add(6.0f);
-                results.add(5.3f);
-            }
-            DataPoint[] convertedResults = convertToDataPointArray(results);
-            if(resultList.equals(null)){
-                resultList = new ArrayList<DataPoint[]>();
-            }
-            resultList.add(convertedResults);
-            resultKeys.add(resultCounter);
-            resultCounter++;
-            results.clear();
+
             locationManager.removeUpdates(this);
         } else if (v.getId() == R.id.checkBox_speed_boundaries){
             if(cbSpeedBoundaries.isChecked()){
