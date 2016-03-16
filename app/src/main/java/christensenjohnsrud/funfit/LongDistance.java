@@ -55,7 +55,7 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
     private Timer totalTimer, walkingTimer, runningTimer;
 
     private boolean timerRunningOn = false, timerWalkingOn = false, timerOn = false;
-    private int GPS_request_intensity = 5000;
+    public static int GPS_request_intensity = 5000;
 
     private ArrayList<Float> results;
     private Boolean speedBoundariesEnabled;
