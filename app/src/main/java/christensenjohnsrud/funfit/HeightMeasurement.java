@@ -15,15 +15,13 @@ import android.widget.TextView;
 import java.text.DecimalFormat;
 
 public class HeightMeasurement extends Activity implements OnClickListener {
-	public final static String SHARED_PREFS_NAME="sonarsettings";
-    Ping sp;
-    CheckBox cb;
-    AudioManager am;
-    String unit = "centimeter";
-    float SoS = 340.f;
-    boolean pinging = false;
-    Button button;
-	String TAG = "measure.java";
+    private Ping sp;
+	private CheckBox cb;
+	private AudioManager am;
+	private String unit = "centimeter";
+	private boolean pinging = false;
+	private Button button;
+	String TAG = "HeightMeasurement.java";
 	TextView tv_height, tv_height1, tv_height2, tv_height3, tv_height4, tv_height5;
 	RadioButton radio_centimeter, radio_inch;
 	private float unitFactor = 100;

@@ -3,7 +3,6 @@ package christensenjohnsrud.funfit;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
@@ -32,7 +31,7 @@ public class MainActivity extends Activity implements View.OnClickListener{
     @Override
     public void onClick(View v) {
         if(v.getId() == R.id.button_interval){
-            startActivity(new Intent(this, IntervalA.class));
+            startActivity(new Intent(this, Interval.class));
 
         }
         else if(v.getId() == R.id.button_long_distance){

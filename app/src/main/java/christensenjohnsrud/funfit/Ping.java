@@ -6,7 +6,6 @@ import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaRecorder;
 import android.util.Log;
-//import android.os.Process;
 
 public class Ping {
 	AudioTrack audioTracker; 	// Manages and plays a single audio resource
@@ -35,7 +34,7 @@ public class Ping {
 	static int addRecordLength; 	//milli seconds
 	static int bufferRecordSize; 	//Recording used buffer size
 
-	private float speedOfSound = 340.f; //Check for temperature?
+	private float speedOfSound = 340.f; //Future: Check for temperature
 
 	// Use a short to save memory in large arrays, in situations where the memory savings actually matters
 	short[] chirp;
@@ -71,7 +70,7 @@ public class Ping {
 
 		bufferChirpSize =  sampleRate * chirpLength / 1000;
 		bufferRecordSize =  sampleRate * (addRecordLength+chirpRepeat*(chirpLength+chirpPause)) / 1000;
-		bufferResultSize =  sampleRate * (chirpPause-2*chirpLength) / 1000; //WHY chirpPause-2*chirpLength?
+		bufferResultSize =  sampleRate * (chirpPause-2*chirpLength) / 1000;
 		chirpSequencePeriod = sampleRate * (chirpLength+chirpPause) / 1000;
 		bufferChirpSequenceSize =  chirpRepeat * chirpSequencePeriod;
 		distanceFactor = speedOfSound / (float) sampleRate / 2.f; //Divided by 2 since it travels twice the length
@@ -126,13 +125,14 @@ public class Ping {
 
 		for (int i = 0; i < bufferChirpSize; i++) {
 
-			// Create a sine with sweeping frequency: sin(2 Pi f(t) * t)
-			// Wiki: sin( 2*Pi ( f0*t + (k/2)*t^2) )
-			// The sweep goes from the (carrier - bandwidth/2) to (carrier + bandwidth/2): f(t) = carrierFreq + bandwidth*(t/T-0.5)
-			// Finally T = bufferChirpSize / sampleRate
-			// and t = i / sampleRate
-			// The sine is then scaled to the size of "short" and stored in the buffer
-			// Short does not have decimals, that is why we need to multiply the linear chirp with Short.MAX_VALUE
+			/* Create a sine with sweeping frequency: sin(2 Pi f(t) * t)
+			 * Wiki: sin( 2*Pi ( f0*t + (k/2)*t^2) )
+			 * The sweep goes from the (carrier - bandwidth/2) to (carrier + bandwidth/2): f(t) = carrierFreq + bandwidth*(t/T-0.5)
+			 * Finally T = bufferChirpSize / sampleRate
+			 * and t = i / sampleRate
+			 * The sine is then scaled to the size of "short" and stored in the buffer
+			 * Short does not have decimals, that is why we need to multiply the linear chirp with Short.MAX_VALUE
+			 */
 
 			buffer[i] = (short)(Short.MAX_VALUE * Math.sin(2*Math.PI*(carrierFreq + bandwidth*(i*0.5/(double) bufferChirpSize -0.5))*i/(double) sampleRate));
 
@@ -191,42 +191,38 @@ public class Ping {
 	}
 
 	// 	crossCorrelate(periodBuffer, chirp, result, bufferChirpSize, bufferResultSize);
-	private void crossCorrelate(float[] f, short[] g, float[] res, int gSize, int resSize) { //res has to be of the size fSize-gSize+1 > 0, returns the max of the cross-correlation
+	private void crossCorrelate(float[] periodBuffer, short[] chirp, float[] result, int bufferChirpSize, int bufferResultSize) { //res has to be of the size fSize-gSize+1 > 0, returns the max of the cross-correlation
 		//		 crossCorrelate(periodBuffer, chirp, result, bufferChirpSize, bufferResultSize);
 		Log.d(TAG, "crossCorrelate()");
-		for (int T = 0; T < resSize; T++) {
-			res[T] = 0.f;
-			if (T < resSize/3) {
-				for (int t = 0; t < gSize; t++) {
-					res[T] += f[t+T]*g[t];
+		for (int T = 0; T < bufferResultSize; T++) {
+			result[T] = 0.f;
+			if (T < bufferResultSize/3) {
+				for (int t = 0; t < bufferChirpSize; t++) {
+					result[T] += periodBuffer[t+T]*chirp[t];
 				}
 			}
 		}
 	}
 
-
-	private void amplifyEchoes(short[] rec, int zero, float[] pB, int sPeriod) {
-		Log.d(TAG, zero+"");
+	private void amplifyEchoes(short[] recordingBuffer, int start, float[] periodBuffer, int chirpSequencePeriod) {
 		Log.d(TAG, "amplifyEchoes()");
-		for (int i = 0; i < sPeriod; i++) {
-			pB[i] = 0.f;
+		for (int i = 0; i < chirpSequencePeriod; i++) {
+			periodBuffer[i] = 0.f;
 			for (int j = 0; j < chirpRepeat; j++)
-				pB[i] += rec[zero+i+j*sPeriod];
+				periodBuffer[i] += recordingBuffer[start+i+j*chirpSequencePeriod];
 		}
 	}
 
 	// Finding highest recording value
-	// findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize)
-	private int findBeginning(short[] rec, short[] chirp, int limit, int bSize) {
-		//		findBeginning(recordingBuffer, chirp, addRecordLength * sampleRate / 1000, bufferChirpSize)
+	private int findBeginning(short[] recordingBuffer, short[] chirp, int limit, int bufferChirpSize) {
 		Log.d(TAG, "findBeginning()");
 		float max = 0.f;
 		float temp;
 		int startIndex = 0;
 		for (int start = 0; start < limit; start++) {
 			temp = 0.f;
-			for (int i = 0; i < bSize; i++) {
-				temp += rec[start+i]*chirp[i];
+			for (int i = 0; i < bufferChirpSize; i++) {
+				temp += recordingBuffer[start+i]*chirp[i];
 			}
 			if (Math.abs(temp) > max) {
 				max = Math.abs(temp);
@@ -237,19 +233,18 @@ public class Ping {
 	}
 
 	// Removing noise
-	private void gaussianFilter(float[] buffer, int size, int amount) {
-		//		 gaussianFilter(result, bufferResultSize, 5);
+	private void gaussianFilter(float[] result, int bufferResultSize, int amount) {
 		Log.d(TAG, "gaussianFilter()");
-		float[] temp = buffer.clone();
-		for (int i = 0; i < size/3; i++) {
-			buffer[i] = 0;
+		float[] temp = result.clone();
+		for (int i = 0; i < bufferResultSize/3; i++) {
+			result[i] = 0;
 			for (int j = -2*amount+i; j <= 2*amount+i; j++)
-				if (j >= 0 && j < size)
-					buffer[i] += Math.abs(temp[j])*Math.exp(-Math.pow((j-i)/amount, 2)/2.f);
+				if (j >= 0 && j < bufferResultSize)
+					result[i] += Math.abs(temp[j])*Math.exp(-Math.pow((j-i)/amount, 2)/2.f);
 		}
 	}
 	// Find the five most probable distances
-	private void normalize(float[] buffer, int size, int offset) {
+	private void normalize(float[] result, int bufferResultSize, int offset) {
 		Log.d(TAG, "normalize()");
 		// Creating empty list
 		for (int x = 0; x < 5; x++) {
@@ -257,15 +252,15 @@ public class Ping {
 			distanceList[x][1] = 0.f;
 		}
 		boolean localMax;
-		for (int y = offset; y < size/3; y++) {
+		for (int y = offset; y < bufferResultSize/3; y++) {
 			localMax = true;
 			for (int z = -bufferChirpSize; z <= bufferChirpSize; z++)
-				if (buffer[z+y] > buffer[y])
+				if (result[z+y] > result[y])
 					localMax = false;
 			if (localMax) { //The neighboring peaks are smaller - otherwise skip this point
 				int w = 5;
-				while (w > 0 && distanceList[w-1][1] < buffer[y]) {
-					Log.d(TAG + " normalize", distanceList[w-1][1] +" < "+ buffer[y]);
+				while (w > 0 && distanceList[w-1][1] < result[y]) {
+					Log.d(TAG + " normalize", distanceList[w-1][1] +" < "+ result[y]);
 					if (w < 5) {
 						distanceList[w][0] = distanceList[w-1][0];
 						distanceList[w][1] = distanceList[w-1][1];
@@ -274,7 +269,7 @@ public class Ping {
 				}
 				if (w < 5) {
 					distanceList[w][0] = y* distanceFactor;
-					distanceList[w][1] = buffer[y];
+					distanceList[w][1] = result[y];
 				}
 			}
 		}

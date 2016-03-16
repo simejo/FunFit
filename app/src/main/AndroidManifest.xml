@@ -26,15 +26,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".Interval"
-            android:label="@string/title_activity_interval"
-            android:theme="@style/AppTheme.NoActionBar" />
         <activity android:name=".LongDistance" />
-        <activity android:name=".IntervalLinear" />
         <activity android:name=".HeightMeasurement" />
         <activity android:name=".RandomWorkout" />
-        <activity android:name=".IntervalA"
+        <activity android:name=".Interval"
             android:windowSoftInputMode="stateHidden"/>
         <activity android:name=".LongDistanceTabHolder" />
 

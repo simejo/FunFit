@@ -67,7 +67,6 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
 
     //Google API
     private long startTimeGoogle;
-    private Context context;
     /**
      * A receiver for DetectedActivity objects broadcast by the
      * {@code ActivityDetectionIntentService}.
@@ -177,27 +176,24 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
 
     }
 
-
-
-
     @Override
     public void onLocationChanged(Location location) {
         location.getLatitude();
         Log.i("onLocationChanged", "called");
         double speed = location.getSpeed()*km_h; //Convert from m/s to km/h
+        String speedHolder = "Current speed: " + speed;
         if(speed < speedThresholdLower){
-            tvCurrentSpeed.setText("Current speed: " + speed + " TOO SLOW");
             if(speedBoundariesEnabled){
                 tone.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 1000);
+                speedHolder += " TOO SLOW";
             }
-        } else if (speed > speedThresholdUpper){
-            tvCurrentSpeed.setText("Current speed: " + speed + "TOO FAST");
-            if(speedBoundariesEnabled){
+        } else if (speed > speedThresholdUpper) {
+            if (speedBoundariesEnabled) {
                 tone.startTone(ToneGenerator.TONE_CDMA_ABBR_ALERT, 100);
+                speedHolder += " TOO FAST";
             }
-        } else{
-            tvCurrentSpeed.setText("Current speed: " + speed);
         }
+        tvCurrentSpeed.setText(speedHolder);
         results.add((float) speed);
     }
 
@@ -236,13 +232,6 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
                 btnTimer.setText("Pause");
 
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    //    ActivityCompat#requestPermissions
-                    // here to request the missing permissions, and then overriding
-                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                    //                                          int[] grantResults)
-                    // to handle the case where the user grants the permission. See the documentation
-                    // for ActivityCompat#requestPermissions for more details.
                     return;
                 }
                 if ( !locationManager.isProviderEnabled( LocationManager.GPS_PROVIDER ) ) {
@@ -298,8 +287,6 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         else{
             rangeSeekBar.setAlpha(0.5f);
         }
-
-
     }
 
     public DataPoint[] convertToDataPointArray(ArrayList<Float> result){
@@ -352,22 +339,6 @@ public class LongDistance extends Activity implements LocationListener, View.OnC
         super.onStop();
         mGoogleApiClient.disconnect();
     }
-
-    /*@Override
-    protected void onResume() {
-        super.onResume();
-        // Register the broadcast receiver that informs this activity of the DetectedActivity
-        // object broadcast sent by the intent service.
-        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver,
-                new IntentFilter(Constants.BROADCAST_ACTION));
-    }
-
-    @Override
-    protected void onPause() {
-        // Unregister the broadcast receiver that was registered during onResume().
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
-        super.onPause();
-    }*/
 
     /**
      * Runs when a GoogleApiClient object successfully connects.

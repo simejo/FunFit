@@ -1,102 +1,78 @@
 package christensenjohnsrud.funfit;
 
-import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
+import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.SystemClock;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.NumberPicker;
+import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.ActivityRecognition;
-import com.google.android.gms.location.DetectedActivity;
+
 import java.util.ArrayList;
 
-public class Interval extends AppCompatActivity implements SensorEventListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status> {
+public class Interval extends Activity implements SensorEventListener, View.OnClickListener, SeekBar.OnSeekBarChangeListener {
+
 
     private String className = "Interval.java"; //To debug
 
-    //Google API
-    private Context context;
-    /**
-     * A receiver for DetectedActivity objects broadcast by the
-     * {@code ActivityDetectionIntentService}.
-     */
-    protected ActivityDetectionBroadcastReceiver mBroadcastReceiver;
 
-    /**
-     * Provides the entry point to Google Play services.
-     */
-    protected GoogleApiClient mGoogleApiClient;
-
-    //private ListView mDetectedActivitiesListView;
-
-    /**
-     * The DetectedActivities that we track in this sample. We use this for initializing the
-     * {@code DetectedActivitiesAdapter}. We also use this for persisting state in
-     * {@code onSaveInstanceState()} and restoring it in {@code onCreate()}. This ensures that each
-     * activity is displayed with the correct confidence level upon orientation changes.
-     */
-    private ArrayList<DetectedActivity> mDetectedActivities;
-
-    //BUGGING
-    private float accel_threshold = 10.0f;
-    private long startTimeGoogle;
+    // TESTING
+    private float accel_threshold = 4f;
+    private TextView sampleRate_tv, threshold_tv;
+    private NumberPicker npSampleRate;
+    private String[] sampleRateArray = {"100","200","500", "1000", "1500", "2000"};
+    private int accelSampleRate;
+    private SeekBar seekBarThreshold;
 
     // SENSOR
     private SensorManager sensorManager;
     private Sensor sensor;
-    //TODO: Find appropriate default values
-    private Float startThreshold = 8f;
-    private Float stopThreshold = -8f;
+
     private float[] gravity = new float[3];
 
     // TIMER
-    private Button startButton;
-    private Button pauseButton;
-    private TextView timerValue, currentActivity;
-    private long startTime = 0L;
+    private TextView timerValue;
     private Timer timer;
+    private Handler handlerCheck, handlerRunPause;
 
     // CONNECT TIMER AND ACCELERATION
-    private boolean timerRunning = false;
-    private boolean blocked = false; // Activation/deactivation of timer for a given time
+    private boolean timerRunning = false;       // Timer is for running or pause
+    private boolean blockedCheck = false;       // Avoid to check max acceleration too often
+    private boolean blockedRunPause = false;    // Avoid to start run/pause timer too often
     private int startTimerCountDown= 15;
     private ListView resultsList;
 
     // RESULTS
     public ArrayList<IntervalItem> currentResults;
     private int intervalItemId;
-    private ArrayAdapterItem adapter;
+    private ArrayAdapterIntervalItem adapter;
     private float maxX = 0;
     private float maxY = 0;
     private float maxZ = 0;
 
+    // TESTNG
+    /* The idea is to collect the last seconds of acceleration data,
+     * in order to check for how long time the user may have been running,
+     * but the google api did not detect it
+     */
+    Integer[] accelDataList;
+    int accelDataListLength;
+    int accel_counter = 0;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_interval);
-        context = this;
 
         //  ACCELEROMETER
         sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
@@ -112,50 +88,43 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         currentResults = new ArrayList<IntervalItem>();
         intervalItemId = 0;
         resultsList = (ListView) findViewById(R.id.list_view_interval_tracker);
-        adapter = new ArrayAdapterItem(this, R.layout.list_view_row_item, currentResults);
-        // create a new ListView, set the adapter and item click listener
+        adapter = new ArrayAdapterIntervalItem(this, R.layout.list_view_row_item, currentResults);
+        // Create a new ListView, set the adapter and item click listener
         resultsList.setAdapter(adapter);
 
 
 
-        // GOOGLE API
+        // Acceleration threshold
+        threshold_tv = (TextView) findViewById(R.id.text_view_threshold);
+        seekBarThreshold = (SeekBar)findViewById(R.id.seekbar_threshold);
+        seekBarThreshold.setOnSeekBarChangeListener(this);
+        seekBarThreshold.setMax(7);
 
-        // Get a receiver for broadcasts from ActivityDetectionIntentService.
-        startTimeGoogle = SystemClock.uptimeMillis();
-        mBroadcastReceiver = new ActivityDetectionBroadcastReceiver();
-
-
-
-
-        // Reuse the value of mDetectedActivities from the bundle if possible. This maintains state
-        // across device orientation changes. If mDetectedActivities is not stored in the bundle,
-        // populate it with DetectedActivity objects whose confidence is set to 0. Doing this
-        // ensures that the bar graphs for only only the most recently detected activities are
-        // filled in.
-        if (savedInstanceState != null && savedInstanceState.containsKey(
-                Constants.DETECTED_ACTIVITIES)) {
-            mDetectedActivities = (ArrayList<DetectedActivity>) savedInstanceState.getSerializable(Constants.DETECTED_ACTIVITIES);
-        } else {
-            mDetectedActivities = new ArrayList<DetectedActivity>();
-
-            // Set the confidence level of each monitored activity to zero.
-            for (int i = 0; i < Constants.MONITORED_ACTIVITIES.length; i++) {
-                mDetectedActivities.add(new DetectedActivity(Constants.MONITORED_ACTIVITIES[i], 0));
+        // Acceleration sample rate
+        sampleRate_tv = (TextView) findViewById(R.id.text_view_sample_rate);
+        accelSampleRate = 500;
+        npSampleRate = (NumberPicker) findViewById(R.id.np_sample_rate);
+        npSampleRate.setMinValue(0); //from array first value
+        //Specify the maximum value/number of NumberPicker
+        npSampleRate.setMaxValue(sampleRateArray.length - 1); //to array last value
+        npSampleRate.setWrapSelectorWheel(true);
+        npSampleRate.setDisplayedValues(sampleRateArray);
+        npSampleRate.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                sampleRate_tv.setText("Acceleration sample rate is " + sampleRateArray[newVal] + " ms");
+                accelSampleRate = (int) Integer.parseInt(sampleRateArray[newVal]);
             }
-        }
-        currentActivity.setText(mDetectedActivities.get(0).toString() + " " + mDetectedActivities.get(1).toString());
-
-        // Kick off the request to build GoogleApiClient.
-        buildGoogleApiClient();
+        });
 
 
+        accelDataList = new Integer[]{0,0,0,0,0};
+        accelDataListLength = accelDataList.length;
     }
-
 
     @Override
     public void onSensorChanged(SensorEvent event) {
         // http://developer.android.com/guide/topics/sensors/sensors_motion.html
-
         final float alpha = 0.8f;
 
         // Isolate the force of gravity with the low-pass filter.
@@ -172,331 +141,116 @@ public class Interval extends AppCompatActivity implements SensorEventListener, 
         if (axisY > maxY) maxY = axisY;
         if (axisZ > maxZ) maxZ = axisZ;
 
-        if (startTimerCountDown > 0){
+        // Need this because it takes several iterations to remove the gravity
+        if (startTimerCountDown > 0) {
             startTimerCountDown--;
         }
+        else if(!blockedCheck) {
+            // Updating accelDataList
+            int acc = getMax((int)axisX, (int)axisY, (int)axisZ);
+            accelDataList[accel_counter] = acc;
+            accel_counter += 1;
+            accel_counter = accel_counter % accelDataListLength;
 
+            // Test
+            //printAccelDataList();
 
-        else{
-            startThreshold = accel_threshold;
-            if ((axisX >= startThreshold || axisY >= startThreshold || axisZ >= startThreshold) && !blocked){
-                Log.i(className, "*accelerometer* x=" + Math.round(axisX) + " y=" + Math.round(axisY) + " z=" + Math.round(axisZ));
+            blockedCheck =true;
+            blockTimerCheck();
 
-                if (timerRunning){
-                    String currentIntervalDuration = timerValue.getText().toString();
-                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration));
-                    maxX = 0;
-                    maxY = 0;
-                    maxZ = 0;
-
-                    timer.resetTimer();
-                    timerValue.setText(timer.getCurrentTime());
-
-                    timerRunning = false;
-                    blocked = true;
-                    blockTimer();
-                }
-                else{
-                    String currentIntervalDuration = timerValue.getText().toString();
-                    currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration));
-                    maxX = 0;
-                    maxY = 0;
-                    maxZ = 0;
-
-                    //startTime = SystemClock.uptimeMillis();
-
-                    timer.resetTimer();
-                    timerValue.setText(timer.getCurrentTime());
-
-
-                    timerRunning = true;
-                    blocked = true;
-                    blockTimer();
-                }
-                intervalItemId ++;
-                adapter.notifyDataSetChanged();
-
-            }
-        }
-
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-    }
-
-    private void blockTimer(){
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                blocked = false;
-            }
-        }, 1000);
-    }
-
-
-    /**
-     * Builds a GoogleApiClient. Uses the {@code #addApi} method to request the
-     * ActivityRecognition API.
-     */
-    protected synchronized void buildGoogleApiClient() {
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(ActivityRecognition.API)
-                .build();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        mGoogleApiClient.connect();
-
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        mGoogleApiClient.disconnect();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // Register the broadcast receiver that informs this activity of the DetectedActivity
-        // object broadcast sent by the intent service.
-        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver,
-                new IntentFilter(Constants.BROADCAST_ACTION));
-    }
-
-    @Override
-    protected void onPause() {
-        // Unregister the broadcast receiver that was registered during onResume().
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
-        super.onPause();
-    }
-
-    /**
-     * Runs when a GoogleApiClient object successfully connects.
-     */
-    @Override
-    public void onConnected(Bundle connectionHint) {
-        Log.i("Interval", "Connected to GoogleApiClient");
-        requestActivityUpdatesHandler();
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult result) {
-        // Refer to the javadoc for ConnectionResult to see what error codes might be returned in
-        // onConnectionFailed.
-        Log.i("Interval", "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
-    }
-
-    @Override
-    public void onConnectionSuspended(int cause) {
-        // The connection to Google Play services was lost for some reason. We call connect() to
-        // attempt to re-establish the connection.
-        Log.i("Interval", "Connection suspended");
-        mGoogleApiClient.connect();
-    }
-
-    /**
-     * Registers for activity recognition updates using
-     * {@link com.google.android.gms.location.ActivityRecognitionApi#requestActivityUpdates} which
-     * returns a {@link com.google.android.gms.common.api.PendingResult}. Since this activity
-     * implements the PendingResult interface, the activity itself receives the callback, and the
-     * code within {@code onResult} executes. Note: once {@code requestActivityUpdates()} completes
-     * successfully, the {@code DetectedActivitiesIntentService} starts receiving callbacks when
-     * activities are detected.
-     */
-    public void requestActivityUpdatesHandler() {
-        if (!mGoogleApiClient.isConnected()) {
-            Toast.makeText(this, "Not connected",
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
-        ActivityRecognition.ActivityRecognitionApi.requestActivityUpdates(
-                mGoogleApiClient,
-                Constants.DETECTION_INTERVAL_IN_MILLISECONDS,
-                getActivityDetectionPendingIntent()
-        ).setResultCallback(this);
-        currentActivity.setText(mDetectedActivities.get(0).toString());
-    }
-
-    /**
-     * Removes activity recognition updates using
-     * {@link com.google.android.gms.location.ActivityRecognitionApi#removeActivityUpdates} which
-     * returns a {@link com.google.android.gms.common.api.PendingResult}. Since this activity
-     * implements the PendingResult interface, the activity itself receives the callback, and the
-     * code within {@code onResult} executes. Note: once {@code removeActivityUpdates()} completes
-     * successfully, the {@code DetectedActivitiesIntentService} stops receiving callbacks about
-     * detected activities.
-     */
-    public void removeActivityUpdatesHandler() {
-        if (!mGoogleApiClient.isConnected()) {
-            Toast.makeText(this, "Not connected", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        // Remove all activity updates for the PendingIntent that was used to request activity
-        // updates.
-        ActivityRecognition.ActivityRecognitionApi.removeActivityUpdates(
-                mGoogleApiClient,
-                getActivityDetectionPendingIntent()
-        ).setResultCallback(this);
-    }
-
-    /**
-     *
-     * @param status The Status returned through a PendingIntent when requestActivityUpdates()
-     *               or removeActivityUpdates() are called.
-     */
-    public void onResult(Status status) {
-        if (status.isSuccess()) {
-            // Toggle the status of activity updates requested, and save in shared preferences.
-            boolean requestingUpdates = !getUpdatesRequestedState();
-            setUpdatesRequestedState(requestingUpdates);
-            currentActivity.setText("On result " + mDetectedActivities.get(0).toString() + " " + mDetectedActivities.get(1).toString());
-
-
-        } else {
-            Log.e("Interval", "Error adding or removing activity detection: " + status.getStatusMessage());
-        }
-    }
-
-    /**
-     * Gets a PendingIntent to be sent for each activity detection.
-     */
-    private PendingIntent getActivityDetectionPendingIntent() {
-        Intent intent = new Intent(this, DetectedActivitiesIntentService.class);
-        Log.i(className, "getActivityDetectionPendingIntent");
-        // We use FLAG_UPDATE_CURRENT so that we get the same pending intent back when calling
-        // requestActivityUpdates() and removeActivityUpdates().
-        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-    }
-
-    /**
-     * Retrieves a SharedPreference object used to store or read values in this app. If a
-     * preferences file passed as the first argument to {@link #getSharedPreferences}
-     * does not exist, it is created when {@link SharedPreferences.Editor} is used to commit
-     * data.
-     */
-    private SharedPreferences getSharedPreferencesInstance() {
-        return getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, MODE_PRIVATE);
-    }
-
-    /**
-     * Retrieves the boolean from SharedPreferences that tracks whether we are requesting activity
-     * updates.
-     */
-    private boolean getUpdatesRequestedState() {
-        Log.i(className, "getUpdatesRequestedState");
-        return getSharedPreferencesInstance()
-                .getBoolean(Constants.ACTIVITY_UPDATES_REQUESTED_KEY, false);
-    }
-
-    /**
-     * Sets the boolean in SharedPreferences that tracks whether we are requesting activity
-     * updates.
-     */
-    private void setUpdatesRequestedState(boolean requestingUpdates) {
-        getSharedPreferencesInstance()
-                .edit()
-                .putBoolean(Constants.ACTIVITY_UPDATES_REQUESTED_KEY, requestingUpdates)
-                .commit();
-    }
-
-    /**
-     * Stores the list of detected activities in the Bundle.
-     */
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putSerializable(Constants.DETECTED_ACTIVITIES, mDetectedActivities);
-        super.onSaveInstanceState(savedInstanceState);
-    }
-
-    /**
-     * Processes the list of freshly detected activities. Asks the adapter to update its list of
-     * DetectedActivities with new {@code DetectedActivity} objects reflecting the latest detected
-     * activities.
-     */
-    protected void updateDetectedActivitiesList(ArrayList<DetectedActivity> detectedActivities) {
-
-        /*String holder = "";
-        for(DetectedActivity da: detectedActivities){
-            holder += da.toString() + ", ";
-        }
-        String time = (SystemClock.uptimeMillis()-startTimeGoogle) + "";
-        //startTimeGoogle = (SystemClock.uptimeMillis()-startTimeGoogle);
-        currentActivity.setText("Update: " + holder + " " + time);
-        Log.i(className, "updateDetectedActivitiesList(ArrayList<DetectedActivity> detectedActivities");
-
-        int currentType0 = detectedActivities.get(0).getType();
-
-
-
-        if (currentType0 == DetectedActivity.RUNNING ||
-                (currentType0 == DetectedActivity.ON_FOOT &&  detectedActivities.get(1).getType() == DetectedActivity.RUNNING)) {
-            if(!timerRunning){
-                if (intervalItemId != 0){
+            // Start drag / Done with pause
+            if (!blockedRunPause && !timerRunning && running()) {
+                if (intervalItemId != 0) {
                     String currentIntervalDuration = timerValue.getText().toString();
                     currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.PAUSE, currentIntervalDuration));
                 }
-                else{
-                    Toast.makeText(this,"STARTED",Toast.LENGTH_SHORT).show();
-                }
 
-                startTime = SystemClock.uptimeMillis();
-
-                timer.setStartTime(SystemClock.uptimeMillis());
-                timer.removeHandlerCallback();
+                timer.resetTimer();
                 timerValue.setText(timer.getCurrentTime());
 
-                timer.postDelayed();
-
                 timerRunning = true;
-                intervalItemId++;
+                blockedRunPause = true;
+                blockTimerRunPause();
+                intervalItemId ++;
+                adapter.notifyDataSetChanged();
+            }
+            // Start pause / Done with drag
+            else if (timerRunning && !running()){
+                String currentIntervalDuration = timerValue.getText().toString();
+                currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration));
+
+                timer.resetTimer();
+                timerValue.setText(timer.getCurrentTime());
+
+                timerRunning = false;
+                blockedRunPause = true;
+                blockTimerRunPause();
+                intervalItemId ++;
+                adapter.notifyDataSetChanged();
             }
         }
-        else if (timerRunning){
-            String currentIntervalDuration = timerValue.getText().toString();
-            currentResults.add(new IntervalItem(intervalItemId, IntervalItem.Type.RUN, currentIntervalDuration));
-
-            timer.setStartTime(SystemClock.uptimeMillis());
-            timer.removeHandlerCallback();
-            timerValue.setText(timer.getCurrentTime());
-            timer.postDelayed();
-
-            timerRunning = false;
-            intervalItemId ++;
-        }
-        Log.i(className, "updateDetectedActivitiesList");
-
-        */
-
-        String holder = "";
-        for(DetectedActivity da: detectedActivities){
-            holder += da.toString() + ", ";
-        }
-        String time = (SystemClock.uptimeMillis()-startTimeGoogle) + "";
-        currentActivity.setText("Update: " + holder + " " + time);
     }
 
-    /**
-     * Receiver for intents sent by DetectedActivitiesIntentService via a sendBroadcast().
-     * Receives a list of one or more DetectedActivity objects associated with the current state of
-     * the device.
-     */
-    public class ActivityDetectionBroadcastReceiver extends BroadcastReceiver {
-        protected static final String TAG = "activity-detection";
 
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            ArrayList<DetectedActivity> updatedActivities =
-                    intent.getParcelableArrayListExtra(Constants.ACTIVITY_EXTRA);
-            updateDetectedActivitiesList(updatedActivities);
-            Log.i(TAG, "ActivityDetectionBroadcastReceiver");
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
+    private void blockTimerCheck(){
+        handlerCheck = null;
+        handlerCheck = new Handler();
+        handlerCheck.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                blockedCheck = false;
+            }
+        }, accelSampleRate); // Possibility to change this. {"100","200","500", "1000", "1500", "2000"} ms
+
+    }
+    private void blockTimerRunPause(){
+        handlerRunPause = null;
+        handlerRunPause = new Handler();
+        handlerRunPause.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                blockedRunPause = false;
+            }
+        }, 6000);
+    }
+
+    @Override
+    public void onClick(View v) {
+
+    }
+
+    public int getMax(int x, int y, int z){
+        return Math.max(x, Math.max(y,z));
+    }
+
+    public boolean running(){
+        int holder = 0;
+        for (int data : accelDataList){
+            holder+= data;
         }
+        float avg = holder/accelDataListLength;
+        if (avg > accel_threshold){
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        accel_threshold = progress + 3;
+        threshold_tv.setText("The acceleration threshold is: "+ accel_threshold);
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+
     }
 }

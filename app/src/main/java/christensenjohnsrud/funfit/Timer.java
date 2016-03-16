@@ -100,7 +100,6 @@ public class Timer extends Activity{
             setStartTime(SystemClock.uptimeMillis() - convertArrayToLong());
         }
         postDelayed();
-        //handler.postAtTime(this, startTime + (((totalTime[1] * 60) + totalTime[2] + 1) * 1000));
     }
 
     public void finish() {
